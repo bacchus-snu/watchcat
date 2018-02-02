@@ -17,21 +17,22 @@ defmodule Metric do
       end
     end
 
+    fold = fn (res, map) ->
+      case res do
+        {:ok, %{key: key, value: value}} ->
+          %{map | key => value}
+          Map.put(map, key, value)
+        {:error, _} ->
+          map
+      end
+    end
+
     case {output, status} do
       {output, 0} ->
-        lines = output |> String.trim |> String.split("\n")
-        fold = fn (res, map) ->
-          case res do
-            {:ok, %{key: key, value: value}} ->
-              Map.put(map, key, value)
-            {:error, _} ->
-              map
-          end
-        end
-        meminfo_map = lines |> Enum.map(parse_line) |> List.foldl(%{}, fold)
-        meminfo_map
-
-      _ ->
+        output
+        |> String.trim |> String.split("\n")
+        |> Enum.map(parse_line) |> List.foldl(%{}, fold)
+      {_, _} ->
         %{}
     end
   end
