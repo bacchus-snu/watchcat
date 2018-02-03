@@ -17,6 +17,10 @@ defmodule PeriodicCollect do
     {:noreply, state}
   end
 
+  def handle_info(_, state) do
+    {:noreply, state}
+  end
+
   defp task_collect_metric() do
     :not_implemented
   end
