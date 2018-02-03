@@ -1,17 +1,8 @@
 defmodule Client do
-  use Supervisor
-  require PeriodicCollect
+  use Application
+  require ClientSupervisor
 
-  def start_link(opts) do
-    Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
+  def start(_type, _args) do
+    ClientSupervisor.start_link([])
   end
-
-  def init(_args) do
-    children = [
-      PeriodicCollect,
-    ]
-
-    Supervisor.init(children, strategy: :one_for_one)
-  end
-
 end
