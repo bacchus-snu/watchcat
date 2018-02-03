@@ -65,6 +65,13 @@ defmodule Metric do
   end
 
   def fetch_network_usage do
-    :network
+    import String
+    {:ok, interfaces} = File.ls("/sys/class/net/")
+
+    for iface <- interfaces,
+      {:ok, rx} = File.read("/sys/class/net/#{iface}/statistics/rx_bytes"),
+      {:ok, tx} = File.read("/sys/class/net/#{iface}/statistics/tx_bytes") do
+        {iface |> to_atom, {rx |> trim |> to_integer, tx |> trim |> to_integer}}
+      end
   end
 end
