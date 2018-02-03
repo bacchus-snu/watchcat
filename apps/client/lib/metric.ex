@@ -71,7 +71,7 @@ defmodule Metric do
     for iface <- interfaces,
       {:ok, rx} = File.read("/sys/class/net/#{iface}/statistics/rx_bytes"),
       {:ok, tx} = File.read("/sys/class/net/#{iface}/statistics/tx_bytes") do
-        {iface |> to_atom, {rx |> trim |> to_integer, tx |> trim |> to_integer}}
+        %{"name" => iface, "rx" => rx |> trim |> to_integer, "tx" => tx |> trim |> to_integer}
       end
   end
 end
