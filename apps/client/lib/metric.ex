@@ -96,4 +96,37 @@ defmodule Metric do
         %{"name" => iface, "rx" => rx |> trim |> to_integer, "tx" => tx |> trim |> to_integer}
       end
   end
+
+  def fetch_uptime do
+    {output, status} = System.cmd("uptime", [])
+    regex_source =
+      ~S"(?<time>\S+) up (?<days>\d+) days,"
+      <> ~S"\s+(?<hour>\d+):(?<minute>\d+),"
+      <> ~S"\s+(?<users>\d+) user,"
+      <> ~S"\s+load average: (?<load1>\S+), (?<load5>\S+), (?<load15>\S+)"
+
+    {:ok, regex} = Regex.compile(regex_source)
+
+    case {output, status} do
+      {output, 0} ->
+        match = Regex.named_captures(regex, output)
+        case match do
+          nil ->
+            %{}
+          map ->
+            map
+            |> Map.update!("time", &Time.from_iso8601!/1)
+            |> Map.update!("days", &String.to_integer/1)
+            |> Map.update!("hour", &String.to_integer/1)
+            |> Map.update!("minute", &String.to_integer/1)
+            |> Map.update!("users", &String.to_integer/1)
+            |> Map.update!("load1", &String.to_float/1)
+            |> Map.update!("load5", &String.to_float/1)
+            |> Map.update!("load15", &String.to_float/1)
+        end
+
+      {_, _} ->
+        %{}
+    end
+  end
 end
