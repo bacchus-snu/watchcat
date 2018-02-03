@@ -31,15 +31,17 @@ defmodule PeriodicCollect do
       {:memory_raw, Metric.fetch_memory_usage},
       {:disk_raw, Metric.fetch_disk_usage},
       {:network_raw, Metric.fetch_network_usage},
+      {:uptime_raw, Metric.fetch_uptime},
     ]
 
-    [cpu, memory, disk, network] = metrics
+    [cpu, memory, disk, network, uptime] = metrics
 
     # Update new metric information
     :ets.insert(:metric, {:cpu, calculate_cpu_usage(cpu)})
     :ets.insert(:metric, {:memory, calculate_memory_usage(memory)})
     :ets.insert(:metric, {:disk, calculate_disk_usage(disk)})
     :ets.insert(:metric, {:network, calculate_network_usage(network)})
+    :ets.insert(:metric, {:uptime, calculate_uptime(uptime)})
 
     :ets.insert(:metric, metrics)
   end
@@ -108,6 +110,15 @@ defmodule PeriodicCollect do
             %{"name" => name, "tx_speed" => tx_speed, "rx_speed" => rx_speed}
         end
     end
+  end
+
+  defp calculate_uptime({:uptime_raw, m}) do
+    %{
+      "load" => {m["load1"], m["load5"], m["load15"]},
+      "uptime" => {m["days"], m["hour"], m["minute"]},
+      "time" => m["time"],
+      "users" => m["users"],
+    }
   end
 
   defp metric_collection() do
