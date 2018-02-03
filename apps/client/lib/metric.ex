@@ -6,23 +6,13 @@ defmodule Metric do
   def fetch_memory_usage do
     {output, status} = System.cmd("cat", ["/proc/meminfo"])
 
-    parse_line = fn line ->
-      try do
-        [key | tail] = line |> String.split(":")
-        value = tail |> List.first |> String.trim |> String.split |> List.first
-        {:ok, %{key: key, value: String.to_integer(value)}}
-      rescue
-        e in MatchError ->
-          {:error, e}
-      end
-    end
-
-    fold = fn (res, map) ->
-      case res do
-        {:ok, %{key: key, value: value}} ->
-          %{map | key => value}
-          Map.put(map, key, value)
-        {:error, _} ->
+    parse_and_add = fn (line, map) ->
+      # match "key: value"
+      match = Regex.named_captures(~r/(?<key>\S+):\s*(?<value>\d+)/, line)
+      case match do
+        %{"key" => key, "value" => value} ->
+          Map.put(map, key, String.to_integer(value))
+        nil ->
           map
       end
     end
@@ -30,8 +20,9 @@ defmodule Metric do
     case {output, status} do
       {output, 0} ->
         output
-        |> String.trim |> String.split("\n")
-        |> Enum.map(parse_line) |> List.foldl(%{}, fold)
+        |> String.trim
+        |> String.split("\n")
+        |> List.foldl(%{}, parse_and_add)
       {_, _} ->
         %{}
     end
