@@ -57,7 +57,7 @@ defmodule Metric do
       |> String.to_integer
     end
 
-    {output, status} = System.cmd("df", ["-P", "-k", "/"])
+    {output, status} = System.cmd("df", ["-l", "-k", "-P", "-T", "-x", "tmpfs", "-x", "devtmpfs"])
 
     case {output, status} do
       {output, 0} ->
