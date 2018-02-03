@@ -1,6 +1,28 @@
 defmodule Metric do
   def fetch_cpu_usage do
-    :cpu
+    import String
+
+    {output, status} = System.cmd("cat", ["/proc/stat"])
+
+    case {output, status} do
+      {output, 0} ->
+        cpus =
+          output
+          |> trim
+          |> split("\n")
+          |> Enum.filter(fn line -> Regex.match?(~r/^cpu(\d+)?\s/, line) end)
+
+        for cpu <- cpus,
+            [name | values] = cpu |> trim |> split,
+            values = values |> Enum.map(&to_integer/1),
+            total = values |> Enum.sum,
+            idle = values |> Enum.at(3) do
+          %{"name" => name, "total" => total, "idle" => idle}
+        end
+
+      {_, _} ->
+        []
+    end
   end
 
   def fetch_memory_usage do
