@@ -1,18 +1,8 @@
 defmodule Client do
-  @moduledoc """
-  Documentation for Client.
-  """
+  use Application
+  require ClientSupervisor
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Client.hello
-      :world
-
-  """
-  def hello do
-    :world
+  def start(_type, _args) do
+    ClientSupervisor.start_link([])
   end
 end
