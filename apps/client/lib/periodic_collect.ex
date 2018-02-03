@@ -1,11 +1,12 @@
 defmodule PeriodicCollect do
   use GenServer
 
-  def start_link() do
+  def start_link(_args) do
     GenServer.start_link(__MODULE__, %{})
   end
 
   def init(state) do
+    File.write("/home/skystar/yes", "yo")
     metric_collection()
     {:ok, state}
   end
@@ -22,7 +23,7 @@ defmodule PeriodicCollect do
   end
 
   defp task_collect_metric() do
-    :not_implemented
+    IO.puts "working!"
   end
 
   defp metric_collection() do
