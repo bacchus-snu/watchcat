@@ -34,6 +34,17 @@ defmodule PeriodicCollect do
       {:uptime_raw, Metric.fetch_uptime},
     ]
 
+    metrics =
+      Enum.map(metrics, fn {key, res} ->
+        case res do
+          {:ok, raw} ->
+            {key, raw}
+          {:error, _msg} ->
+            {key, :not_available}
+        end
+      end
+      )
+
     [cpu, memory, disk, network, uptime] = metrics
 
     # Update new metric information
@@ -46,79 +57,108 @@ defmodule PeriodicCollect do
     :ets.insert(:metric, metrics)
   end
 
-  defp calculate_cpu_usage({:cpu_raw, curr}) do
-    case :ets.lookup(:metric, :cpu_raw) |> List.first do
-      nil ->
+  defp calculate_cpu_usage({:cpu_raw, raw}) do
+    case raw do
+      :not_available ->
         :not_available
-      {:cpu_raw, prev} ->
-        for {prev_core, curr_core} <- Enum.zip(prev, curr),
-          name = prev_core["name"],
-          idle = curr_core["idle"] - prev_core["idle"],
-          total = curr_core["total"] - prev_core["total"],
-          usage_percent = ((total - idle) / total) * 100 do
-            %{"name" => name, "usage" => usage_percent}
+
+      curr ->
+        case :ets.lookup(:metric, :cpu_raw) |> List.first do
+          nil ->
+            :not_available
+          {:cpu_raw, prev} ->
+            for {prev_core, curr_core} <- Enum.zip(prev, curr),
+              name = prev_core["name"],
+              idle = curr_core["idle"] - prev_core["idle"],
+              total = curr_core["total"] - prev_core["total"],
+              usage_percent = ((total - idle) / total) * 100 do
+                %{"name" => name, "usage" => usage_percent}
+            end
         end
     end
   end
 
-  defp calculate_memory_usage({:memory_raw, m}) do
-    total = m["MemTotal"]
-    used = total - m["MemFree"]
-    buffer = m["Buffers"]
-    cached = m["Cached"] + m["SReclaimable"] - m["Shmem"]
-    swap_total = m["SwapTotal"]
-    swap_free = m["SwapFree"]
-    available = total - (used - buffer - cached)
-    %{
-      "total" => total,
-      "used" => used,
-      "buffer" => buffer,
-      "cached" => cached,
-      "swap_total" => swap_total,
-      "swap_free" => swap_free,
-      "available" => available,
-    }
-  end
+  defp calculate_memory_usage({:memory_raw, raw}) do
+    case raw do
+      :not_available ->
+        :not_available
 
-  defp calculate_disk_usage({:disk_raw, metric}) do
-    for part <- metric,
-      total = part["1024-blocks"],
-      used = part["Used"],
-      filesystem = part["Filesystem"],
-      mountpoint = part["Mounted"] do
+      m ->
+        total = m["MemTotal"]
+        used = total - m["MemFree"]
+        buffer = m["Buffers"]
+        cached = m["Cached"] + m["SReclaimable"] - m["Shmem"]
+        swap_total = m["SwapTotal"]
+        swap_free = m["SwapFree"]
+        available = total - (used - buffer - cached)
         %{
           "total" => total,
           "used" => used,
-          "filesystem" => filesystem,
-          "mountpoint" => mountpoint,
-          "used_percent" => (used / total) * 100,
+          "buffer" => buffer,
+          "cached" => cached,
+          "swap_total" => swap_total,
+          "swap_free" => swap_free,
+          "available" => available,
         }
-      end
+    end
   end
 
-  defp calculate_network_usage({:network_raw, curr}) do
-    case :ets.lookup(:metric, :network_raw) |> List.first do
-      nil ->
+  defp calculate_disk_usage({:disk_raw, raw}) do
+    case raw do
+      :not_available ->
         :not_available
-      {:network_raw, prev} ->
-        for {pn, cn} <- Enum.zip(prev, curr),
-          name = pn["name"],
-          rx = cn["rx"] - pn["rx"], tx = cn["tx"] - pn["tx"],
-          # TODO: more precise time interval
-          rx_speed = rx / 1024,
-          tx_speed = tx / 1024 do
-            %{"name" => name, "tx_speed" => tx_speed, "rx_speed" => rx_speed}
+
+      disks ->
+        for part <- disks,
+            total = part["1024-blocks"],
+            used = part["Used"],
+            filesystem = part["Filesystem"],
+            mountpoint = part["Mounted"] do
+          %{
+            "total" => total,
+            "used" => used,
+            "filesystem" => filesystem,
+            "mountpoint" => mountpoint,
+            "used_percent" => (used / total) * 100,
+          }
         end
     end
   end
 
-  defp calculate_uptime({:uptime_raw, m}) do
-    %{
-      "load" => {m["load1"], m["load5"], m["load15"]},
-      "uptime" => {m["days"], m["hour"], m["minute"]},
-      "time" => m["time"],
-      "users" => m["users"],
-    }
+  defp calculate_network_usage({:network_raw, raw}) do
+    case raw do
+      :not_available ->
+        :not_available
+
+      curr ->
+        case :ets.lookup(:metric, :network_raw) |> List.first do
+          nil ->
+            :not_available
+          {:network_raw, prev} ->
+            for {pn, cn} <- Enum.zip(prev, curr),
+              name = pn["name"],
+              rx = cn["rx"] - pn["rx"], tx = cn["tx"] - pn["tx"],
+              # TODO: more precise time interval
+              rx_speed = rx / 1024,
+              tx_speed = tx / 1024 do
+                %{"name" => name, "tx_speed" => tx_speed, "rx_speed" => rx_speed}
+            end
+        end
+    end
+  end
+
+  defp calculate_uptime({:uptime_raw, raw}) do
+    case raw do
+      :not_available ->
+        :not_available
+      m ->
+        %{
+          "load" => {m["load1"], m["load5"], m["load15"]},
+          "uptime" => {m["days"], m["hour"], m["minute"]},
+          "time" => m["time"],
+          "users" => m["users"],
+        }
+    end
   end
 
   defp metric_collection() do

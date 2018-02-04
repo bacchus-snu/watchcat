@@ -11,17 +11,18 @@ defmodule Metric do
           |> trim
           |> split("\n")
           |> Enum.filter(fn line -> Regex.match?(~r/^cpu(\d+)?\s/, line) end)
-
-        for cpu <- cpus,
-            [name | values] = cpu |> trim |> split,
-            values = values |> Enum.map(&to_integer/1),
-            total = values |> Enum.sum,
-            idle = values |> Enum.at(3) do
-          %{"name" => name, "total" => total, "idle" => idle}
-        end
+        cpus =
+          for cpu <- cpus,
+              [name | values] = cpu |> trim |> split,
+              values = values |> Enum.map(&to_integer/1),
+              total = values |> Enum.sum,
+              idle = values |> Enum.at(3) do
+            %{"name" => name, "total" => total, "idle" => idle}
+          end
+        {:ok, cpus}
 
       {_, _} ->
-        []
+        {:error, "'cat /proc/stat' command fail"}
     end
   end
 
@@ -41,12 +42,14 @@ defmodule Metric do
 
     case {output, status} do
       {output, 0} ->
-        output
-        |> String.trim
-        |> String.split("\n")
-        |> List.foldl(%{}, parse_and_add)
+        map =
+          output
+          |> String.trim
+          |> String.split("\n")
+          |> List.foldl(%{}, parse_and_add)
+        {:ok, map}
       {_, _} ->
-        %{}
+        {:error, "'cat /proc/meminfo' command fail"}
     end
   end
 
@@ -67,22 +70,24 @@ defmodule Metric do
           |> String.split("\n")
           |> Enum.map(&String.split/1)
 
-        disk_infos
-        # "on" is truncated in header "Mounted on", so key is "Mounted"
-        |> Enum.map(fn(x) -> Enum.zip(headers, x) |> Map.new end)
-        |> Enum.map(
-          # values are negative when info not exist
-          fn(disk_info) ->
-            disk_info
-            |> Map.update("1024-blocks", -1, &String.to_integer/1)
-            |> Map.update("Used", -1, &String.to_integer/1)
-            |> Map.update("Available", -1, &String.to_integer/1)
-            |> Map.update("Capacity", -1, percentage_to_number)
-          end
-        )
+        disk_infos =
+          disk_infos
+          # "on" is truncated in header "Mounted on", so key is "Mounted"
+          |> Enum.map(fn(x) -> Enum.zip(headers, x) |> Map.new end)
+          |> Enum.map(
+            # values are negative when info not exist
+            fn(disk_info) ->
+              disk_info
+              |> Map.update("1024-blocks", -1, &String.to_integer/1)
+              |> Map.update("Used", -1, &String.to_integer/1)
+              |> Map.update("Available", -1, &String.to_integer/1)
+              |> Map.update("Capacity", -1, percentage_to_number)
+            end
+          )
+        {:ok, disk_infos}
 
       {_, _} ->
-        []
+        {:error, "'df -l -k -P -T -x tmpfs -x devtmpfs' command fail"}
     end
   end
 
@@ -90,11 +95,13 @@ defmodule Metric do
     import String
     {:ok, interfaces} = File.ls("/sys/class/net/")
 
-    for iface <- interfaces,
-      {:ok, rx} = File.read("/sys/class/net/#{iface}/statistics/rx_bytes"),
-      {:ok, tx} = File.read("/sys/class/net/#{iface}/statistics/tx_bytes") do
+    interfaces =
+      for iface <- interfaces,
+          {:ok, rx} = File.read("/sys/class/net/#{iface}/statistics/rx_bytes"),
+          {:ok, tx} = File.read("/sys/class/net/#{iface}/statistics/tx_bytes") do
         %{"name" => iface, "rx" => rx |> trim |> to_integer, "tx" => tx |> trim |> to_integer}
       end
+    {:ok, interfaces}
   end
 
   def fetch_uptime do
@@ -112,21 +119,23 @@ defmodule Metric do
         match = Regex.named_captures(regex, output)
         case match do
           nil ->
-            %{}
+            {:error, "unexpected output format"}
           map ->
-            map
-            |> Map.update!("time", &Time.from_iso8601!/1)
-            |> Map.update!("days", &String.to_integer/1)
-            |> Map.update!("hour", &String.to_integer/1)
-            |> Map.update!("minute", &String.to_integer/1)
-            |> Map.update!("users", &String.to_integer/1)
-            |> Map.update!("load1", &String.to_float/1)
-            |> Map.update!("load5", &String.to_float/1)
-            |> Map.update!("load15", &String.to_float/1)
+            map =
+              map
+              |> Map.update!("time", &Time.from_iso8601!/1)
+              |> Map.update!("days", &String.to_integer/1)
+              |> Map.update!("hour", &String.to_integer/1)
+              |> Map.update!("minute", &String.to_integer/1)
+              |> Map.update!("users", &String.to_integer/1)
+              |> Map.update!("load1", &String.to_float/1)
+              |> Map.update!("load5", &String.to_float/1)
+              |> Map.update!("load15", &String.to_float/1)
+            {:ok, map}
         end
 
       {_, _} ->
-        %{}
+        {:error, "'uptime' command fail"}
     end
   end
 end
