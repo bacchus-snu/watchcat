@@ -1,18 +1,8 @@
 defmodule Server do
-  @moduledoc """
-  Documentation for Server.
-  """
+  use Application
+  require ServerSupervisor
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Server.hello
-      :world
-
-  """
-  def hello do
-    :world
+  def start(_type, _args) do
+    ServerSupervisor.start_link([])
   end
 end
