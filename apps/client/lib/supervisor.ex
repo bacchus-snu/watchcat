@@ -1,6 +1,6 @@
 defmodule ClientSupervisor do
   use Supervisor
-  require PeriodicCollect
+  require Collector
   require Listener
 
   def start_link(opts) do
@@ -11,7 +11,7 @@ defmodule ClientSupervisor do
     port = 10101
 
     children = [
-      PeriodicCollect,
+      Collector,
       {Task.Supervisor, name: Listener.TaskSupervisor},
       {Listener, port},
     ]

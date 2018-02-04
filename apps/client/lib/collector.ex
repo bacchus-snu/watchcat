@@ -1,4 +1,4 @@
-defmodule PeriodicCollect do
+defmodule Collector do
   use GenServer
 
   def start_link(_args) do
