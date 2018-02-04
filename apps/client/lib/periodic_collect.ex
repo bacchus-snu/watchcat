@@ -160,8 +160,8 @@ defmodule PeriodicCollect do
         :not_available
       m ->
         %{
-          "load" => {m["load1"], m["load5"], m["load15"]},
-          "uptime" => {m["days"], m["hour"], m["minute"]},
+          "load" => [m["load1"], m["load5"], m["load15"]],
+          "uptime" => [m["days"], m["hour"], m["minute"]],
           "time" => m["time"],
           "users" => m["users"],
         }

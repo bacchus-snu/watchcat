@@ -123,7 +123,6 @@ defmodule Metric do
           map ->
             map =
               map
-              |> Map.update!("time", &Time.from_iso8601!/1)
               |> Map.update!("days", &String.to_integer/1)
               |> Map.update!("hour", &String.to_integer/1)
               |> Map.update!("minute", &String.to_integer/1)
