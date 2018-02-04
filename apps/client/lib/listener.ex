@@ -37,9 +37,25 @@ defmodule Listener do
   defp serve_request(socket) do
     case :gen_tcp.recv(socket, 0) do
       {:ok, data} ->
-        Logger.info data
+        handle_data(data)
         serve_request(socket)
       {:error, _reason} -> nil
     end
+  end
+
+  defp handle_data(packed_data) do
+    [command | args] = unpack(packed_data)
+    case command do
+      "metric" ->
+        :not_implemented
+      _ ->
+        :error
+    end
+  end
+
+  defp unpack(data) do
+    data
+    |> Base.decode64!()
+    |> Msgpax.unpack!()
   end
 end
