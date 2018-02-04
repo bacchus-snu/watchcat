@@ -9,6 +9,13 @@ defmodule PeriodicCollect do
     # Setup ETS table
     :ets.new(:metric, [:named_table])
 
+    Enum.each(
+      [:cpu, :memory, :disk, :network, :uptime],
+      fn key ->
+        :ets.insert(:metric, {key, :not_available})
+      end
+    )
+
     metric_collection()
     {:ok, state}
   end
