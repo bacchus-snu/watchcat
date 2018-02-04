@@ -36,7 +36,11 @@ defmodule Listener do
   defp serve_request(socket) do
     case :gen_tcp.recv(socket, 0) do
       {:ok, data} ->
-        handle_data(socket, data)
+        try do
+          handle_data(socket, data)
+        rescue
+          e in RuntimeError -> Logger.error e.message
+        end
         serve_request(socket)
       {:error, _reason} -> nil
     end
