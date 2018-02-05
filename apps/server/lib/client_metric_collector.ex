@@ -8,7 +8,7 @@ defmodule ClientMetricCollector do
   def init(state) do
     # TODO: get file name from config
     :ok = load_all_clients_from_file(:client_db)
-    :ets.new(:client_metrics, [:named_table])
+    :client_metrics = :ets.new(:client_metrics, [:named_table, :public])
 
     # Start routine
     crawl_client()
@@ -18,7 +18,7 @@ defmodule ClientMetricCollector do
   defp load_all_clients_from_file(file) do
     {:ok, table} = :dets.open_file(file, [type: :set])
     :ets.new(:clients, [:named_table])
-    :ets.insert(:clients, :dets.select(table, :ets.fun2ms(fn x -> x end)))
+    :ets.insert(:clients, :dets.select(table, [{:"$1", [], [:"$1"]}]))
     :dets.close(table)
   end
 
@@ -34,7 +34,7 @@ defmodule ClientMetricCollector do
   end
 
   defp task_crawl_client() do
-    clients = :ets.select(:clients, :ets.fun2ms(fn x -> x end))
+    clients = :ets.select(:clients, [{:"$1", [], [:"$1"]}])
 
     clients |>
     Enum.each(fn client -> Task.Supervisor.start_child(
@@ -48,11 +48,12 @@ defmodule ClientMetricCollector do
     {name, info} = client
     %{name: ^name, host: host} = info
 
-    command = ["metric", ["cpu", "memory", "disk", "network", "uptime"]] |> pack()
+    command = ["metric", "cpu", "memory", "disk", "network", "uptime"]
+              |> pack()
 
     # Caution: `host` must be charlist
     # TODO: get port and timeout from config
-    metric_data = case :gen_tcp.connect(host, 10101, {:binary, active: false}, 1000) do
+    metric_data = case :gen_tcp.connect(host, 10101, [:binary, active: false], 1000) do
       {:ok, socket} ->
         :gen_tcp.send(socket, command <> "\n")
         case :gen_tcp.recv(socket, 0, 1000) do
