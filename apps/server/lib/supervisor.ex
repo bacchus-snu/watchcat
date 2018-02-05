@@ -10,7 +10,7 @@ defmodule ServerSupervisor do
   def init(_args) do
     children = [
       ClientMetricCollector,
-      APIServer,
+      {Task.Supervisor, name: ClientMetricCollector.Crawler},
       # more children...
     ]
 
