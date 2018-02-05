@@ -26,7 +26,9 @@ defmodule Server.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:msgpax, "~>2.0"}
+      {:msgpax, "~> 2.0"},
+      {:cowboy, "~> 2.2"},
+      {:poison, "~> 3.1"},
     ]
   end
 end
