@@ -3,7 +3,4 @@ defmodule ClientTest do
   doctest Client
 
   # TODO: write some tests!
-  test "greets the world" do
-    assert Client.hello() == :world
-  end
 end
