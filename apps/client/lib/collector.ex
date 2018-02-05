@@ -1,4 +1,4 @@
-defmodule PeriodicCollect do
+defmodule Collector do
   use GenServer
 
   def start_link(_args) do
@@ -170,6 +170,7 @@ defmodule PeriodicCollect do
 
   defp metric_collection() do
     # Periodic task of 1000ms
+    # TODO: get interval from config
     Process.send_after(self(), :collect_metric, 1000)
   end
 
