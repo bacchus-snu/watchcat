@@ -8,6 +8,7 @@ defmodule ClientMetricCollector do
   def init(state) do
     # TODO: get file name from config
     :ok = load_all_clients_from_file(:client_db)
+    :ets.new(:client_metrics, [:named_table])
 
     # Start routine
     crawl_client()
@@ -22,8 +23,6 @@ defmodule ClientMetricCollector do
   end
 
   def handle_info(:crawl_client, state) do
-    # TODO: crawl!
-
     task_crawl_client()
 
     crawl_client()
@@ -45,8 +44,42 @@ defmodule ClientMetricCollector do
   end
 
   defp crawl(client) do
-    # client = {:name, %{name: name, host: host}}
+    # client = {name, %{name: name, host: host}}
+    {name, info} = client
+    %{name: ^name, host: host} = info
 
+    command = ["metric", ["cpu", "memory", "disk", "network", "uptime"]] |> pack()
+
+    # Caution: `host` must be charlist
+    # TODO: get port and timeout from config
+    metric_data = case :gen_tcp.connect(host, 10101, {:binary, active: false}, 1000) do
+      {:ok, socket} ->
+        :gen_tcp.send(socket, command <> "\n")
+        case :gen_tcp.recv(socket, 0, 1000) do
+          {:ok, data} ->
+            data |> unpack()
+
+          {:error, _reason} -> :not_available
+        end
+
+      {:error, _reason} -> :not_available
+    end
+
+    :ets.insert(:client_metrics, {name, metric_data})
+  end
+
+  defp pack(data) do
+    data
+    |> Msgpax.pack!()
+    |> IO.iodata_to_binary()
+    |> Base.encode64
+  end
+
+  defp unpack(data) do
+    data
+    |> String.trim()
+    |> Base.decode64!()
+    |> Msgpax.unpack!()
   end
 
   defp crawl_client() do
