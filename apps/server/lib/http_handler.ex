@@ -62,9 +62,11 @@ defmodule HTTPHandler.MachineReq do
   import Ex2ms
   def init(req0 = %{method: "GET"}, state) do
     machines = :ets.select(:clients, fun do {x, y} -> y end)
-
+    update = fn x -> Map.update!(x, :host, &to_string/1) end
     contents =
-      machines |> Poison.encode!
+      machines
+      |> Enum.map(update)
+      |> Poison.encode!
 
     req = :cowboy_req.reply(
       200,
