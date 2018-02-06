@@ -6,13 +6,22 @@ defmodule HTTPHandler.MetricReq do
     {code, contents} =
       case machine do
         :undefined ->
-          machines = :ets.select(:client_metrics, fun do x -> x end)
+          machines = :ets.select(
+            :client_metrics,
+            fun do
+              {x, y} ->
+                %{"name" => x, "metric" => y}
+            end
+          )
           {200, machines}
 
         machine_key ->
           machines = :ets.select(
             :client_metrics,
-            fun do {key, metric} when key == ^machine_key -> metric end
+            fun do
+              {key, metric} when key == ^machine_key ->
+                %{"name" => key, "metric" => metric}
+            end
           )
           case machines do
             [] ->
@@ -54,7 +63,7 @@ end
 defmodule HTTPHandler.MachineReq do
   import Ex2ms
   def init(req0 = %{method: "GET"}, state) do
-    machines = :ets.select(:clients, fun do x -> x end)
+    {machines = :ets.select(:clients, fun do {x, y} -> y end)
 
     contents =
       machines |> Poison.encode!
