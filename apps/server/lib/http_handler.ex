@@ -6,23 +6,21 @@ defmodule HTTPHandler.MetricReq do
     {code, contents} =
       case machine do
         :undefined ->
-          machines = :ets.select(
+          machines_raw = :ets.select(
             :client_metrics,
-            fun do
-              {x, y} ->
-                %{"name" => x, "metric" => y}
-            end
+            fun do x -> x end
           )
+          machines = machines_raw
+                     |> Enum.map(fn {x, y} -> %{"name" => x, "metric" => y} end)
           {200, machines}
 
         machine_key ->
-          machines = :ets.select(
+          machines_raw = :ets.select(
             :client_metrics,
-            fun do
-              {key, metric} when key == ^machine_key ->
-                %{"name" => key, "metric" => metric}
-            end
+            fun do {key, metric} when key == ^machine_key -> {key, metric} end
           )
+          machines = machines_raw
+                     |> Enum.map(fn {x, y} -> %{"name" => x, "metric" => y} end)
           case machines do
             [] ->
               {404, ""}
@@ -63,7 +61,7 @@ end
 defmodule HTTPHandler.MachineReq do
   import Ex2ms
   def init(req0 = %{method: "GET"}, state) do
-    {machines = :ets.select(:clients, fun do {x, y} -> y end)
+    machines = :ets.select(:clients, fun do {x, y} -> y end)
 
     contents =
       machines |> Poison.encode!
