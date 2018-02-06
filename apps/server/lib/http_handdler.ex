@@ -1,4 +1,4 @@
-defmodule HTTPMetricReq do
+defmodule HTTPHandler.MetricReq do
   import Ex2ms
   def init(req0 = %{method: "GET"}, state) do
     machine = :cowboy_req.binding(:machine, req0)
@@ -51,9 +51,9 @@ defmodule HTTPMetricReq do
   end
 end
 
-defmodule HTTPMachineReq do
+defmodule HTTPHandler.MachineReq do
   import Ex2ms
-  def init({req0 = %{method: "GET"}, state) do
+  def init(req0 = %{method: "GET"}, state) do
     machines = :ets.select(:clients, fun do x -> x end)
 
     contents =

@@ -5,8 +5,8 @@ defmodule Server do
   def start(_type, _args) do
     router = :cowboy_router.compile([
       {:"_", [
-        {"/api/metric/[:machine]", HTTPMetricReq, []},
-        {"/api/machines", HTTPMachineReq, []},
+        {"/api/metric/[:machine]", HTTPHandler.MetricReq, []},
+        {"/api/machines", HTTPHandler.MachineReq, []},
       ]}
     ])
     {:ok, _} = :cowboy.start_clear(
