@@ -29,6 +29,7 @@ defmodule Server.MixProject do
       {:msgpax, "~> 2.0"},
       {:cowboy, "~> 2.2"},
       {:poison, "~> 3.1"},
+      {:ex2ms, "~> 1.0"},
     ]
   end
 end
