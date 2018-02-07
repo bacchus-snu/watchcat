@@ -150,4 +150,17 @@ defmodule Metric do
         {:error, "'cat /proc/loadavg' command fail"}
     end
   end
+
+  def fetch_userlist do
+    {output, status} = System.cmd("who", ["-q"])
+
+    case {output, status} do
+      {output, 0} ->
+        [userlist | _] = output |> String.trim |> String.split("\n")
+        userlist = userlist |> String.split
+        {:ok, userlist}
+      {_, _} ->
+        {:error, "'who -q' command fail"}
+    end
+  end
 end
