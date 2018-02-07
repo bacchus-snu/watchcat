@@ -137,4 +137,17 @@ defmodule Metric do
         {:error, "'uptime' command fail"}
     end
   end
+
+  def fetch_loadavg do
+    {output, status} = System.cmd("cat", ["/proc/loadavg"])
+
+    case {output, status} do
+      {output, 0} ->
+        [load1, load5, load15 | _] = output |> String.trim |> String.split
+        load = [load1, load5, load15] |> Enum.map(&String.to_float/1)
+        {:ok, load}
+      {_, _} ->
+        {:error, "'cat /proc/loadavg' command fail"}
+    end
+  end
 end
