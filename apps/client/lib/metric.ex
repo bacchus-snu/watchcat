@@ -163,4 +163,19 @@ defmodule Metric do
         {:error, "'who -q' command fail"}
     end
   end
+
+  @doc """
+  fetch uptime in second (float)
+  """
+  def fetch_uptime_sec do
+    {output, status} = System.cmd("cat", ["/proc/uptime"])
+
+    case {output, status} do
+      {output, 0} ->
+        [total, _idle] = output |> String.trim |> String.split
+        {:ok, total |> String.to_float}
+      {_, _} ->
+        {:error, "'cat /proc/uptime' command fail"}
+    end
+  end
 end
