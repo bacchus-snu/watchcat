@@ -48,7 +48,7 @@ defmodule ClientMetricCollector do
     {name, info} = client
     %{name: ^name, host: host} = info
 
-    command = ["metric", "cpu", "memory", "disk", "network", "uptime"]
+    command = ["metric", "cpu", "memory", "disk", "network", "uptime", "loadavg", "userlist"]
               |> pack()
 
     # Caution: `host` must be charlist

@@ -64,6 +64,8 @@ defmodule Listener do
       "disk" -> :disk
       "network" -> :network
       "uptime" -> :uptime
+      "loadavg" -> :loadavg
+      "userlist" -> :userlist
     end
 
     :ets.lookup(:metric, key_atom) |> List.first()
