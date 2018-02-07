@@ -10,7 +10,7 @@ defmodule Collector do
     :ets.new(:metric, [:named_table])
 
     Enum.each(
-      [:cpu, :memory, :disk, :network, :uptime],
+      [:cpu, :memory, :disk, :network, :uptime, :loadavg, :userlist],
       fn key ->
         :ets.insert(:metric, {key, :not_available})
       end
@@ -33,35 +33,40 @@ defmodule Collector do
   end
 
   defp task_collect_metric() do
-    metrics = [
+    metrics_raw = [
       {:cpu_raw, Metric.fetch_cpu_usage},
       {:memory_raw, Metric.fetch_memory_usage},
       {:disk_raw, Metric.fetch_disk_usage},
       {:network_raw, Metric.fetch_network_usage},
-      {:uptime_raw, Metric.fetch_uptime},
     ]
 
-    metrics =
-      Enum.map(metrics, fn {key, res} ->
-        case res do
-          {:ok, raw} ->
-            {key, raw}
-          {:error, _msg} ->
-            {key, :not_available}
-        end
+    extract = fn res ->
+      case res do
+        {:ok, data} -> data
+        {:error, _msg} -> :not_available
       end
-      )
+    end
 
-    [cpu, memory, disk, network, uptime] = metrics
+    metrics_raw =
+      Enum.map(metrics_raw, fn {key, res} -> {key, res |> extract.()} end)
+
+    [cpu, memory, disk, network] = metrics_raw
+
+    metrics = [
+      {:cpu, calculate_cpu_usage(cpu)},
+      {:memory, calculate_memory_usage(memory)},
+      {:disk, calculate_disk_usage(disk)},
+      {:network, calculate_network_usage(network)},
+      # don't need to calculate
+      {:uptime, Metric.fetch_uptime |> extract.()},
+      {:loadavg, Metric.fetch_loadavg |> extract.()},
+      {:userlist, Metric.fetch_userlist |> extract.()}
+    ]
 
     # Update new metric information
-    :ets.insert(:metric, {:cpu, calculate_cpu_usage(cpu)})
-    :ets.insert(:metric, {:memory, calculate_memory_usage(memory)})
-    :ets.insert(:metric, {:disk, calculate_disk_usage(disk)})
-    :ets.insert(:metric, {:network, calculate_network_usage(network)})
-    :ets.insert(:metric, {:uptime, calculate_uptime(uptime)})
-
     :ets.insert(:metric, metrics)
+
+    :ets.insert(:metric, metrics_raw)
   end
 
   defp calculate_cpu_usage({:cpu_raw, raw}) do
@@ -151,20 +156,6 @@ defmodule Collector do
                 %{"name" => name, "tx_speed" => tx_speed, "rx_speed" => rx_speed}
             end
         end
-    end
-  end
-
-  defp calculate_uptime({:uptime_raw, raw}) do
-    case raw do
-      :not_available ->
-        :not_available
-      m ->
-        %{
-          "load" => [m["load1"], m["load5"], m["load15"]],
-          "uptime" => [m["days"], m["hour"], m["minute"]],
-          "time" => m["time"],
-          "users" => m["users"],
-        }
     end
   end
 
