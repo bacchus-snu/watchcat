@@ -138,6 +138,9 @@ defmodule Metric do
     end
   end
 
+  @doc """
+  fetch the system load averages for the past 1, 5, and 15 minutes.
+  """
   def fetch_loadavg do
     {output, status} = System.cmd("cat", ["/proc/loadavg"])
 
@@ -151,6 +154,9 @@ defmodule Metric do
     end
   end
 
+  @doc """
+  fetch list of user who currently logged in
+  """
   def fetch_userlist do
     {output, status} = System.cmd("who", ["-q"])
 
