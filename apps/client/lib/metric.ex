@@ -128,8 +128,11 @@ defmodule Metric do
 
     case {output, status} do
       {output, 0} ->
-        [userlist | _] = output |> String.trim |> String.split("\n")
-        userlist = userlist |> String.split
+        userlist = output
+          |> String.trim
+          |> String.split("\n")
+          |> List.first()
+          |> String.split()
         {:ok, userlist}
       {_, _} ->
         {:error, "'who -q' command fail"}
