@@ -160,9 +160,8 @@ defmodule Collector do
   end
 
   defp metric_collection() do
-    # Periodic task of 1000ms
-    # TODO: get interval from config
-    Process.send_after(self(), :collect_metric, 1000)
+    interval = Application.get_env(:general, :collect_interval)
+    Process.send_after(self(), :collect_metric, interval)
   end
 
 end
