@@ -38,3 +38,7 @@ tags
 # End of https://www.gitignore.io/api/vim
 
 client_db
+
+# certificates & keys
+*.pem
+!**/priv/cacert/cacert.pem
