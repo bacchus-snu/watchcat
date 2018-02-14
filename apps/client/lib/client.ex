@@ -8,11 +8,11 @@ defmodule Client do
   end
 
   defp init_cert() do
-    private_path = Application.app_dir(:client, "private")
-    File.mkdir_p!(private_path)
+    cert_path = Application.app_dir(:client, "priv/client_cert")
+    File.mkdir_p!(cert_path)
 
-    cert = Path.join(private_path, "cert.pem")
-    key = Path.join(private_path, "key.pem")
+    cert = Path.join(cert_path, "cert.pem")
+    key = Path.join(cert_path, "key.pem")
 
     # Create a new self-signed certificate if it does not already exist
     unless File.exists?(cert) and File.exists?(key) do
