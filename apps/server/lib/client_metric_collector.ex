@@ -6,8 +6,8 @@ defmodule ClientMetricCollector do
   end
 
   def init(state) do
-    # TODO: get file name from config
-    :ok = load_all_clients_from_file(:client_db)
+    db_filename = Application.get_env(:general, :db_filename)
+    :ok = load_all_clients_from_file(db_filename)
     :client_metrics = :ets.new(:client_metrics, [:named_table, :public])
 
     # Start routine
@@ -52,11 +52,12 @@ defmodule ClientMetricCollector do
               |> pack()
 
     # Caution: `host` must be charlist
-    # TODO: get port and timeout from config
-    metric_data = case :gen_tcp.connect(host, 10101, [:binary, active: false], 1000) do
+    port = Application.get_env(:network, :client_port)
+    timeout = Application.get_env(:network, :timeout)
+    metric_data = case :gen_tcp.connect(host, port, [:binary, active: false], timeout) do
       {:ok, socket} ->
         :gen_tcp.send(socket, command <> "\n")
-        case :gen_tcp.recv(socket, 0, 1000) do
+        case :gen_tcp.recv(socket, 0, timeout) do
           {:ok, data} ->
             data |> unpack()
 
@@ -84,8 +85,8 @@ defmodule ClientMetricCollector do
   end
 
   defp crawl_client() do
-    # TODO: get interval from config
-    Process.send_after(self(), :crawl_client, 3000)
+    interval = Application.get_env(:general, :crawl_interval)
+    Process.send_after(self(), :crawl_client, interval)
   end
 
 end
