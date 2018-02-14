@@ -9,14 +9,14 @@ defmodule Client do
 
   defp init_cert() do
     cert_path = Application.app_dir(:client, "priv/client_cert")
-    File.mkdir_p!(cert_path)
-
     cert = Path.join(cert_path, "cert.pem")
     key = Path.join(cert_path, "key.pem")
 
     # Create a new self-signed certificate if it does not already exist
     unless File.exists?(cert) and File.exists?(key) do
-      System.cmd(
+      File.mkdir_p!(cert_path)
+
+      {_, 0} = System.cmd(
         "openssl",
         ["req",
          "-x509",
