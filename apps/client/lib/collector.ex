@@ -160,7 +160,7 @@ defmodule Collector do
   end
 
   defp metric_collection() do
-    interval = Application.get_env(:general, :collect_interval)
+    interval = Application.get_env(:client, :general) |> Keyword.fetch!(:collect_interval)
     Process.send_after(self(), :collect_metric, interval)
   end
 

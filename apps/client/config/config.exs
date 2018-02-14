@@ -1,4 +1,4 @@
 use Mix.Config
 
-config :general,
+config :client, :general,
   collect_interval: 1000
