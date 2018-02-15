@@ -1,5 +1,5 @@
 defmodule Token do
-  def get_token(permission) do
+  def get_token(permission, secret) do
     header =
       %{"typ" => "JWT", "alg": "HS256"}
       |> encode()
@@ -8,12 +8,13 @@ defmodule Token do
       %{
         "iss" => "watchcat",
         "sub" => "Authentication token for API",
+        "iat" => DateTime.utc_now() |> DateTime.to_unix(),
         "perm" => permission,
       }
       |> encode()
 
     signature =
-      :crypto.hmac(:sha256, "secret", header <> "." <> payload)
+      :crypto.hmac(:sha256, secret, header <> "." <> payload)
       |> Base.encode64()
       |> String.replace("=", "")
 
