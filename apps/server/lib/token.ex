@@ -21,6 +21,26 @@ defmodule Token do
     header <> "." <> payload <> "." <> signature
   end
 
+  def get_payload(token, secret) do
+    [header_encoded, payload_encoded, signature_encoded] =
+      token |> String.split(".")
+
+    calculated_signature =
+      :crypto.hmac(:sha256, secret, header_encoded <> "." <> payload_encoded)
+      |> Base.encode64()
+      |> String.replace("=", "")
+
+    if calculated_signature == signature_encoded do
+      payload_encoded
+      |> Base.decode64!()
+      |> Poison.decode!()
+    else
+      {:error, :invalid_signature}
+    end
+  rescue
+    _ -> {:error, :invalid_token}
+  end
+
   defp encode(data) do
     data
     |> Poison.encode!()
