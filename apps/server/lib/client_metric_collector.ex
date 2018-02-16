@@ -44,9 +44,9 @@ defmodule ClientMetricCollector do
   end
 
   defp crawl(client) do
-    # client = {name, %{name: name, host: host}}
+    # client = {name, %{name: name, host: host, fingerprint: fingerprint}}
     {name, info} = client
-    %{name: ^name, host: host} = info
+    %{name: ^name, host: host, fingerprint: fingerprint} = info
 
     command = ["metric", "cpu", "memory", "disk", "network", "uptime", "loadavg", "userlist"]
               |> pack()
@@ -55,19 +55,30 @@ defmodule ClientMetricCollector do
     network_config = Application.get_env(:server, :network)
     port = network_config |> Keyword.fetch!(:client_port)
     timeout = network_config |> Keyword.fetch!(:timeout)
-    metric_data = case :gen_tcp.connect(host, port, [:binary, active: false], timeout) do
+    opts = [
+      :binary,
+      active: false,
+      verify_fun: {&:ssl_verify_fingerprint.verify_fun/3,
+        [{:check_fingerprint, {:sha256, fingerprint}}]},
+      # TODO: add certfile and keyfile
+      # TODO: add more options if needed (maybe verify: verify_none?)
+    ]
+    :ok = :ssl.start()
+    metric_data = case :ssl.connect(host, port, opts, timeout) do
       {:ok, socket} ->
-        :gen_tcp.send(socket, command <> "\n")
-        case :gen_tcp.recv(socket, 0, timeout) do
+        :ssl.send(socket, command <> "\n")
+        case :ssl.recv(socket, 0, timeout) do
           {:ok, data} ->
             data |> unpack()
 
           {:error, _reason} -> :not_available
         end
 
+      {:error, {:tls_alert, _reason}} -> :invalid_connection
+
       {:error, _reason} -> :not_available
     end
-
+    :ssl.stop()
     :ets.insert(:client_metrics, {name, metric_data})
   end
 
