@@ -7,34 +7,49 @@ defmodule Listener do
   end
 
   def accept(port) do
+    priv_path = Application.app_dir(:client, "priv")
+    cert = Path.join(priv_path, "client_cert/cert.pem")
+    key = Path.join(priv_path, "client_cert/key.pem")
+    cacert = Path.join(priv_path, "cacert/cacert.pem")
+    server_domain = Application.get_env(:client, :general) |> Keyword.fetch!(:server_domain)
+
     opts = [
       :binary,
       packet: :line,
       active: false,
       reuseaddr: true,
+      certfile: cert,
+      keyfile: key,
+      cacertfile: cacert,
+      depth: 99,
+      verify: :verify_peer,
+      verify_fun: {&:ssl_verify_hostname.verify_fun/3, [check_hostname: server_domain]},
     ]
 
-    {:ok, socket} = :gen_tcp.listen(port, opts)
+    :ok = :ssl.start()
+    {:ok, listen_socket} = :ssl.listen(port, opts)
 
-    accepter_loop(socket)
+    accepter_loop(listen_socket)
   end
 
-  defp accepter_loop(socket) do
-    case :gen_tcp.accept(socket) do
-      {:ok, incoming} ->
-        {:ok, pid} = Task.Supervisor.start_child(
-          Listener.TaskSupervisor,
-          fn -> serve_request(incoming) end
-        )
-        :ok = :gen_tcp.controlling_process(incoming, pid)
-        accepter_loop(socket)
+  defp accepter_loop(listen_socket) do
+    with {:ok, socket} <- :ssl.transport_accept(listen_socket),
+         :ok <- :ssl.ssl_accept(socket)
+    do
+      {:ok, pid} = Task.Supervisor.start_child(
+        Listener.TaskSupervisor,
+        fn -> serve_request(socket) end
+      )
+      :ok = :ssl.controlling_process(socket, pid)
+      accepter_loop(listen_socket)
+    else
       {:error, _reason} ->
-        accepter_loop(socket)
+        accepter_loop(listen_socket)
     end
   end
 
   defp serve_request(socket) do
-    case :gen_tcp.recv(socket, 0) do
+    case :ssl.recv(socket, 0) do
       {:ok, data} ->
         try do
           handle_data(socket, data)
@@ -51,7 +66,7 @@ defmodule Listener do
     case command do
       "metric" ->
         data = args |> Enum.map(&fetch_metric/1) |> Map.new() |> pack()
-        :gen_tcp.send(socket, data)
+        :ssl.send(socket, data)
       _ ->
         :error
     end
