@@ -18,7 +18,9 @@ defmodule Token do
       |> Base.encode64()
       |> String.replace("=", "")
 
-    header <> "." <> payload <> "." <> signature
+    {:ok, header <> "." <> payload <> "." <> signature}
+  rescue
+    _ -> {:error, :badarg}
   end
 
   def get_payload(token, secret) do

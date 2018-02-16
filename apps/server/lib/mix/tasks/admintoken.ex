@@ -8,7 +8,7 @@ defmodule Mix.Tasks.AdminToken do
 
     if File.exists?(secret_key_path) do
       secret_key = File.read!(secret_key_path)
-      token = Token.get_token("admin", secret_key)
+      {:ok, token} = Token.get_token("admin", secret_key)
       IO.puts(token)
     else
       IO.puts("There is no secret key. Please generate it first.")
