@@ -31,9 +31,10 @@ defmodule Token do
       |> String.replace("=", "")
 
     if calculated_signature == signature_encoded do
-      payload_encoded
+      payload = payload_encoded
       |> Base.decode64!()
       |> Poison.decode!()
+      {:ok, payload}
     else
       {:error, :invalid_signature}
     end
