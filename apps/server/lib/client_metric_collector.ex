@@ -52,16 +52,20 @@ defmodule ClientMetricCollector do
               |> pack()
 
     # Caution: `host` must be charlist
+    general_config = Application.get_env(:server, :general)
     network_config = Application.get_env(:server, :network)
     port = network_config |> Keyword.fetch!(:client_port)
     timeout = network_config |> Keyword.fetch!(:timeout)
+    cert_path = general_config |> Keyword.fetch!(:cert_path)
+    key_path = general_config |> Keyword.fetch!(:key_path)
     opts = [
       :binary,
       active: false,
       verify_fun: {&:ssl_verify_fingerprint.verify_fun/3,
         [{:check_fingerprint, {:sha256, fingerprint}}]},
-      # TODO: add certfile and keyfile
-      # TODO: add more options if needed (maybe verify: verify_none?)
+      verify: :verify_peer,
+      certfile: cert_path,
+      keyfile: key_path,
     ]
     :ok = :ssl.start()
     metric_data = case :ssl.connect(host, port, opts, timeout) do
