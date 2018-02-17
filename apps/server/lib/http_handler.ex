@@ -78,8 +78,8 @@ defmodule HTTPHandler.MachineReq do
   end
 
   def init(req0 = %{method: "POST"}, state) do
-    {:secret, secret} = :ets.lookup(:secret, :secret)
-    payload = :cowboy_req.header("authentication", req0)
+    [secret: secret] = :ets.lookup(:secret, :secret)
+    {:ok, payload} = :cowboy_req.header("authentication", req0)
               |> Token.get_payload(secret)
 
     if payload["perm"] != "admin" do
