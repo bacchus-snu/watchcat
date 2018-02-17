@@ -78,7 +78,6 @@ defmodule HTTPHandler.MachineReq do
   end
 
   def init(req0 = %{method: "POST"}, state) do
-    # read up to 1KB
     {:secret, secret} = :ets.lookup(:secret, :secret)
     payload = :cowboy_req.header("authentication", req0)
               |> Token.get_payload(secret)
@@ -119,9 +118,15 @@ defmodule HTTPHandler.MachineReq do
       req =
         case result do
           {:ok, fingerprint} ->
+            db_filename = Application.get_env(:server, :general)
+                          |> Keyword.fetch!(:db_filename)
             response_body =
               %{"name" => name, "host" => host, "fingerprint" => fingerprint}
               |> Poison.encode!()
+            {:ok, table} = :dets.open_file(db_filename, [type: :set])
+            :dets.insert(:clients, {name, response_body})
+            :dets.close(table)
+            :ets.insert(:clients, {name, response_body})
             :cowboy_req.reply(201, %{"content-type" => "application/json"}, response_body, req1)
           {:error, :connection_failure} ->
             :cowboy_req.reply(404, %{"content-type" => "text/plain"}, "", req1)
@@ -139,10 +144,29 @@ defmodule HTTPHandler.MachineReq do
     :ssl.stop()
   end
 
-  def init(req0 = %{method: "PUT"}, state) do
-  end
-
   def init(req0 = %{method: "DELETE"}, state) do
+    {:secret, secret} = :ets.lookup(:secret, :secret)
+    payload = :cowboy_req.header("authentication", req0)
+              |> Token.get_payload(secret)
+
+    if payload["perm"] != "admin" do
+      req = :cowboy_req.reply(403, %{"content-type" => "text/plain"}, "", req0)
+      {:ok, req, state}
+    else
+      {:ok, body, req1} = :cowboy_req.read_body(req0, %{length: 1024})
+      %{"name" => name} = body |> Poison.decode!()
+      db_filename = Application.get_env(:server, :general)
+                    |> Keyword.fetch!(:db_filename)
+      {:ok, table} = :dets.open_file(db_filename, [type: :set])
+      :dets.delete(table, name)
+      :dets.close(table)
+      req = :cowboy_req.reply(204, %{"content-type" => "text/plain"}, "", req1)
+      {:ok, req, state}
+    end
+  rescue
+    _ ->
+      req = :cowboy_req.reply(400, %{"content-type" => "text/plain"}, "", req0)
+      {:ok, req, state}
   end
 
   # fall back other method
