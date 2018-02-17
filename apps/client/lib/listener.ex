@@ -24,6 +24,7 @@ defmodule Listener do
       depth: 99,
       verify: :verify_peer,
       verify_fun: {&:ssl_verify_hostname.verify_fun/3, [check_hostname: server_domain]},
+      fail_if_no_peer_cert: true
     ]
 
     :ok = :ssl.start()
