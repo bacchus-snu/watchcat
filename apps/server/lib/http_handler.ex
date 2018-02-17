@@ -108,7 +108,7 @@ defmodule HTTPHandler.MachineReq do
       result =
         with {:ok, socket} <- :ssl.connect(host |> to_charlist(), port, opts, timeout),
              {:ok, cert} <- :ssl.peercert(socket),
-             {:ok, hash} <- :crypto.hash(:sha256, cert)
+             hash <- :crypto.hash(:sha256, cert)
         do
           {:ok, hash |> Base.encode16()}
         else

@@ -41,7 +41,7 @@ defmodule Listener do
         Listener.TaskSupervisor,
         fn -> serve_request(socket) end
       )
-      :ok = :ssl.controlling_process(socket, pid)
+      :ssl.controlling_process(socket, pid)
       accepter_loop(listen_socket)
     else
       {:error, _reason} ->
