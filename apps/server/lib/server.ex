@@ -36,5 +36,7 @@ defmodule Server do
       File.mkdir_p!(priv_path)
       File.write(secret_key_path, random_secret)
     end
+    :ets.new(:secret, [:named_table])
+    :ets.insert(:secret, {:secret, File.read!(secret_key_path)})
   end
 end

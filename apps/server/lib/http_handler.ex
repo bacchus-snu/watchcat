@@ -77,6 +77,74 @@ defmodule HTTPHandler.MachineReq do
     {:ok, req, state}
   end
 
+  def init(req0 = %{method: "POST"}, state) do
+    # read up to 1KB
+    {:secret, secret} = :ets.lookup(:secret, :secret)
+    payload = :cowboy_req.header("authentication", req0)
+              |> Token.get_payload(secret)
+
+    if payload["perm"] != "admin" do
+      req = :cowboy_req.reply(403, %{"content-type" => "text/plain"}, "", req0)
+      {:ok, req, state}
+    else
+      {:ok, body, req1} = :cowboy_req.read_body(req0, %{length: 1024})
+      %{"name" => name, "host" => host} = body |> Poison.decode!()
+
+      # TODO: cache these ugly configs in ets at startup
+      general_config = Application.get_env(:server, :general)
+      network_config = Application.get_env(:server, :network)
+      port = network_config |> Keyword.fetch!(:client_port)
+      timeout = network_config |> Keyword.fetch!(:timeout)
+      cert_path = general_config |> Keyword.fetch!(:cert_path)
+      key_path = general_config |> Keyword.fetch!(:key_path)
+      cacert_path = Application.app_dir(:server, "priv") |> Path.join("cacert.pem")
+      opts = [
+        active: false,
+        verify: :verify_none,
+        certfile: cert_path,
+        keyfile: key_path,
+        cacertfile: cacert_path,
+      ]
+      :ok = :ssl.start()
+      result =
+        with {:ok, socket} <- :ssl.connect(host |> to_charlist(), port, opts, timeout),
+             {:ok, cert} <- :ssl.peercert(socket),
+             {:ok, hash} <- :crypto.hash(:sha256, cert)
+        do
+          {:ok, hash |> Base.encode16()}
+        else
+          _ -> {:error, :connection_failure}
+        end
+
+      req =
+        case result do
+          {:ok, fingerprint} ->
+            response_body =
+              %{"name" => name, "host" => host, "fingerprint" => fingerprint}
+              |> Poison.encode!()
+            :cowboy_req.reply(201, %{"content-type" => "application/json"}, response_body, req1)
+          {:error, :connection_failure} ->
+            :cowboy_req.reply(404, %{"content-type" => "text/plain"}, "", req1)
+          {:error, _} ->
+            :cowboy_req.reply(400, %{"content-type" => "text/plain"}, "", req1)
+        end
+
+        {:ok, req, state}
+    end
+  rescue
+    _ ->
+      req = :cowboy_req.reply(400, %{"content-type" => "text/plain"}, "", req0)
+      {:ok, req, state}
+  after
+    :ssl.stop()
+  end
+
+  def init(req0 = %{method: "PUT"}, state) do
+  end
+
+  def init(req0 = %{method: "DELETE"}, state) do
+  end
+
   # fall back other method
   def init(req0, state) do
     req = :cowboy_req.reply(
