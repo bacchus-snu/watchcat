@@ -58,6 +58,7 @@ defmodule ClientMetricCollector do
     timeout = network_config |> Keyword.fetch!(:timeout)
     cert_path = general_config |> Keyword.fetch!(:cert_path)
     key_path = general_config |> Keyword.fetch!(:key_path)
+    cacert_path = Application.app_dir(:server, "priv") |> Path.join("cacert.pem")
     opts = [
       :binary,
       active: false,
@@ -66,6 +67,7 @@ defmodule ClientMetricCollector do
       verify: :verify_peer,
       certfile: cert_path,
       keyfile: key_path,
+      cacertfile: cacert_path,
     ]
     :ok = :ssl.start()
     metric_data = case :ssl.connect(host, port, opts, timeout) do

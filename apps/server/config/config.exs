@@ -1,6 +1,7 @@
 use Mix.Config
 
 config :server, :general,
+  domain: 'example.com',
   db_filename: "client_db",
   crawl_interval: 3000,
   cert_path: nil,
