@@ -4,9 +4,22 @@ defmodule Server do
   require ServerSupervisor
 
   def start(_type, _args) do
+    :ssl.start()
     init_secret_key()
+    init_database()
     start_cowboy()
     ServerSupervisor.start_link([])
+  end
+
+  def stop(_state) do
+    :dets.close(:clients)
+    :ok
+  end
+
+  defp init_database() do
+    db_filename = Application.get_env(:server, :general) |> Keyword.fetch!(:db_filename)
+    opts = [file: db_filename]
+    :dets.open_file(:clients, opts)
   end
 
   defp start_cowboy() do
@@ -36,5 +49,7 @@ defmodule Server do
       File.mkdir_p!(priv_path)
       File.write(secret_key_path, random_secret)
     end
+    :ets.new(:secret, [:named_table])
+    :ets.insert(:secret, {:secret, File.read!(secret_key_path)})
   end
 end
