@@ -5,8 +5,25 @@ defmodule Server do
 
   def start(_type, _args) do
     init_secret_key()
+    init_database()
     start_cowboy()
     ServerSupervisor.start_link([])
+  end
+
+  def stop(_state) do
+    :dets.close(:clients)
+    :ok
+  end
+
+  defp init_database() do
+    db_filename = Application.get_env(:server, :general) |> Keyword.fetch!(:db_filename)
+    auto_save = Application.get_env(:server, :general) |> Keyword.fetch!(:auto_save)
+    opts = [
+      file: db_filename,
+      ram_file: true,
+      auto_save: auto_save,
+    ]
+    :dets.open_file(:clients, opts)
   end
 
   defp start_cowboy() do

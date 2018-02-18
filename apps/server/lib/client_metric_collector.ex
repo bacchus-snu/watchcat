@@ -6,20 +6,11 @@ defmodule ClientMetricCollector do
   end
 
   def init(state) do
-    db_filename = Application.get_env(:server, :general) |> Keyword.fetch!(:db_filename)
-    :ok = load_all_clients_from_file(db_filename)
     :client_metrics = :ets.new(:client_metrics, [:named_table, :public])
 
     # Start routine
     crawl_client()
     {:ok, state}
-  end
-
-  defp load_all_clients_from_file(file) do
-    {:ok, table} = :dets.open_file(file, [type: :set])
-    :ets.new(:clients, [:named_table])
-    :ets.insert(:clients, :dets.select(table, [{:"$1", [], [:"$1"]}]))
-    :dets.close(table)
   end
 
   def handle_info(:crawl_client, state) do
@@ -34,7 +25,7 @@ defmodule ClientMetricCollector do
   end
 
   defp task_crawl_client() do
-    clients = :ets.select(:clients, [{:"$1", [], [:"$1"]}])
+    clients = :dets.select(:clients, [{:"$1", [], [:"$1"]}])
 
     clients |>
     Enum.each(fn client -> Task.Supervisor.start_child(
