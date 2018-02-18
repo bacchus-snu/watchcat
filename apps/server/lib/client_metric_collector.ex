@@ -37,7 +37,8 @@ defmodule ClientMetricCollector do
   defp crawl(client) do
     # client = {name, %{name: name, host: host, fingerprint: fingerprint}}
     {name, info} = client
-    %{name: ^name, host: host, fingerprint: fingerprint} = info
+    %{"name" => ^name, "host" => host, "fingerprint" => fingerprint} = info
+    host = host |> to_charlist()
 
     command = ["metric", "cpu", "memory", "disk", "network", "uptime", "loadavg", "userlist"]
               |> pack()
@@ -60,12 +61,12 @@ defmodule ClientMetricCollector do
       keyfile: key_path,
       cacertfile: cacert_path,
     ]
-    :ok = :ssl.start()
     metric_data = case :ssl.connect(host, port, opts, timeout) do
       {:ok, socket} ->
         :ssl.send(socket, command <> "\n")
         case :ssl.recv(socket, 0, timeout) do
           {:ok, data} ->
+            :ssl.close(socket)
             data |> unpack()
 
           {:error, _reason} -> :not_available
@@ -75,7 +76,6 @@ defmodule ClientMetricCollector do
 
       {:error, _reason} -> :not_available
     end
-    :ssl.stop()
     :ets.insert(:client_metrics, {name, metric_data})
   end
 

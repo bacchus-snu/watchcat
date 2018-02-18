@@ -62,7 +62,7 @@ defmodule HTTPHandler.MachineReq do
   import Ex2ms
   def init(req0 = %{method: "GET"}, state) do
     machines = :dets.select(:clients, fun do {x, y} -> y end)
-    update = fn x -> Map.update!(x, :host, &to_string/1) end
+    update = fn x -> Map.update!(x, "host", &to_string/1) end
     contents =
       machines
       |> Enum.map(update)
@@ -120,9 +120,9 @@ defmodule HTTPHandler.MachineReq do
           {:ok, fingerprint} ->
             response_body =
               %{"name" => name, "host" => host, "fingerprint" => fingerprint}
-              |> Poison.encode!()
             :dets.insert(:clients, {name, response_body})
-            :cowboy_req.reply(201, %{"content-type" => "application/json"}, response_body, req1)
+            :cowboy_req.reply(201, %{"content-type" => "application/json"},
+                              response_body |> Poison.encode!(), req1)
           {:error, :connection_failure} ->
             :cowboy_req.reply(404, %{"content-type" => "text/plain"}, "", req1)
           {:error, _} ->

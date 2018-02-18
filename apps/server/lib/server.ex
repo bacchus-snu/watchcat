@@ -4,6 +4,7 @@ defmodule Server do
   require ServerSupervisor
 
   def start(_type, _args) do
+    :ssl.start()
     init_secret_key()
     init_database()
     start_cowboy()
@@ -17,12 +18,7 @@ defmodule Server do
 
   defp init_database() do
     db_filename = Application.get_env(:server, :general) |> Keyword.fetch!(:db_filename)
-    auto_save = Application.get_env(:server, :general) |> Keyword.fetch!(:auto_save)
-    opts = [
-      file: db_filename,
-      ram_file: true,
-      auto_save: auto_save,
-    ]
+    opts = [file: db_filename]
     :dets.open_file(:clients, opts)
   end
 
