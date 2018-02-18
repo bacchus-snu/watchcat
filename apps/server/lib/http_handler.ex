@@ -88,6 +88,7 @@ defmodule HTTPHandler.MachineReq do
     else
       {:ok, body, req1} = :cowboy_req.read_body(req0, %{length: 1024})
       %{"name" => name, "host" => host} = body |> Poison.decode!()
+      host = host |> to_charlist()
 
       # TODO: cache these ugly configs in ets at startup
       general_config = Application.get_env(:server, :general)
@@ -104,9 +105,8 @@ defmodule HTTPHandler.MachineReq do
         keyfile: key_path,
         cacertfile: cacert_path,
       ]
-      :ok = :ssl.start()
       result =
-        with {:ok, socket} <- :ssl.connect(host |> to_charlist(), port, opts, timeout),
+        with {:ok, socket} <- :ssl.connect(host, port, opts, timeout),
              {:ok, cert} <- :ssl.peercert(socket),
              hash <- :crypto.hash(:sha256, cert)
         do
@@ -118,11 +118,13 @@ defmodule HTTPHandler.MachineReq do
       req =
         case result do
           {:ok, fingerprint} ->
+            body = %{"name" => name, "host" => host, "fingerprint" => fingerprint}
+            :dets.insert(:clients, {name, body})
             response_body =
-              %{"name" => name, "host" => host, "fingerprint" => fingerprint}
-            :dets.insert(:clients, {name, response_body})
-            :cowboy_req.reply(201, %{"content-type" => "application/json"},
-                              response_body |> Poison.encode!(), req1)
+              body
+              |> Map.update!("host", &to_string/1)
+              |> Poison.encode!()
+            :cowboy_req.reply(201, %{"content-type" => "application/json"}, response_body, req1)
           {:error, :connection_failure} ->
             :cowboy_req.reply(404, %{"content-type" => "text/plain"}, "", req1)
           {:error, _} ->
@@ -135,8 +137,6 @@ defmodule HTTPHandler.MachineReq do
     _ ->
       req = :cowboy_req.reply(400, %{"content-type" => "text/plain"}, "", req0)
       {:ok, req, state}
-  after
-    :ssl.stop()
   end
 
   def init(req0 = %{method: "DELETE"}, state) do

@@ -38,7 +38,6 @@ defmodule ClientMetricCollector do
     # client = {name, %{name: name, host: host, fingerprint: fingerprint}}
     {name, info} = client
     %{"name" => ^name, "host" => host, "fingerprint" => fingerprint} = info
-    host = host |> to_charlist()
 
     command = ["metric", "cpu", "memory", "disk", "network", "uptime", "loadavg", "userlist"]
               |> pack()
