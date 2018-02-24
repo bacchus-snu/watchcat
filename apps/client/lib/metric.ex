@@ -5,13 +5,8 @@ defmodule Metric do
     {output, 0} = System.cmd("cat", ["/proc/stat"])
 
     cpus =
-      output
-      |> trim
-      |> split("\n")
-      |> Enum.filter(fn line -> Regex.match?(~r/^cpu(\d+)?\s/, line) end)
-
-    cpus =
-      for cpu <- cpus,
+      for cpu <- output |> trim |> split("\n"),
+          Regex.match?(~r/^cpu(\d+)?\s/, cpu),
           [name | values] = cpu |> trim |> split,
           values = values |> Enum.map(&to_integer/1),
           total = values |> Enum.sum,
@@ -28,58 +23,50 @@ defmodule Metric do
   def fetch_memory_usage do
     {output, 0} = System.cmd("cat", ["/proc/meminfo"])
 
-    parse_and_add = fn (line, map) ->
-      # match "key: value"
-      match = Regex.named_captures(~r/(?<key>\S+):\s*(?<value>\d+)/, line)
-      case match do
-        %{"key" => key, "value" => value} ->
-          Map.put(map, key, String.to_integer(value))
-        nil ->
-          map
-      end
-    end
+    regex = ~r/(?<key>\S+):\s*(?<value>\d+)/
 
-    map =
-      output
-      |> String.trim
-      |> String.split("\n")
-      |> List.foldl(%{}, parse_and_add)
+    meminfos =
+      for line <- output |> String.trim |> String.split("\n"),
+          %{"key" => key, "value" => val} = Regex.named_captures(regex, line),
+          val = String.to_integer(val),
+        into: %{},
+        do: {key,val}
 
-    {:ok, map}
+    {:ok, meminfos}
   rescue
     _ ->
       {:error, "system command fail"}
   end
 
   def fetch_disk_usage do
-    percentage_to_number = fn(percentage) ->
-      percentage
-      |> String.slice(0, String.length(percentage)-1)
+    {output, 0} = System.cmd("df", ["-l", "-k", "-P", "-T", "-x", "tmpfs", "-x", "devtmpfs"])
+
+    percent_to_number = fn percent ->
+      percent
+      |> String.replace_suffix("%", "")
       |> String.to_integer
     end
 
-    {output, 0} = System.cmd("df", ["-l", "-k", "-P", "-T", "-x", "tmpfs", "-x", "devtmpfs"])
+    update_info = fn disk_info ->
+      disk_info
+      |> Map.update("1024-blocks", -1, &String.to_integer/1)
+      |> Map.update("Used", -1, &String.to_integer/1)
+      |> Map.update("Available", -1, &String.to_integer/1)
+      |> Map.update("Capacity", -1, percent_to_number)
+    end
 
-    [headers | disk_infos] =
+    [headers | disks] =
       output
       |> String.trim
       |> String.split("\n")
       |> Enum.map(&String.split/1)
 
     disk_infos =
-      disk_infos
-      # "on" is truncated in header "Mounted on", so key is "Mounted"
-      |> Enum.map(fn(x) -> Enum.zip(headers, x) |> Map.new end)
-      |> Enum.map(
-        # values are negative when info not exist
-        fn disk_info ->
-          disk_info
-          |> Map.update("1024-blocks", -1, &String.to_integer/1)
-          |> Map.update("Used", -1, &String.to_integer/1)
-          |> Map.update("Available", -1, &String.to_integer/1)
-          |> Map.update("Capacity", -1, percentage_to_number)
-        end
-      )
+      for disk <- disks do
+        Enum.zip(headers, disk)
+        |> Map.new()
+        |> update_info.()
+      end
 
     {:ok, disk_infos}
   rescue
