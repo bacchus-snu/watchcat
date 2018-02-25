@@ -1,7 +1,6 @@
 defmodule ServerSupervisor do
   use Supervisor
   require ClientMetricCollector
-  require APIServer
 
   def start_link(opts) do
     Supervisor.start_link(__MODULE__, opts, name: __MODULE__)

@@ -122,13 +122,10 @@ defmodule HTTPHandler.MachineReq do
       %{"name" => name, "host" => host} = body |> Poison.decode!()
       host = host |> to_charlist()
 
-      # TODO: cache these ugly configs in ets at startup
       general_config = Application.get_env(:server, :general)
       network_config = Application.get_env(:server, :network)
-      port = network_config |> Keyword.fetch!(:client_port)
-      timeout = network_config |> Keyword.fetch!(:timeout)
-      cert_path = general_config |> Keyword.fetch!(:cert_path)
-      key_path = general_config |> Keyword.fetch!(:key_path)
+      [client_port: port, timeout: timeout] = network_config
+      [cert_path: cert_path, key_path: key_path] = general_config
       cacert_path = Application.app_dir(:server, "priv") |> Path.join("cacert.pem")
 
       opts = [
