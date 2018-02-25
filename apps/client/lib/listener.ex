@@ -35,12 +35,10 @@ defmodule Listener do
 
   defp accepter_loop(listen_socket) do
     with {:ok, socket} <- :ssl.transport_accept(listen_socket),
-         :ok <- :ssl.ssl_accept(socket)
-    do
-      {:ok, pid} = Task.Supervisor.start_child(
-        Listener.TaskSupervisor,
-        fn -> serve_request(socket) end
-      )
+         :ok <- :ssl.ssl_accept(socket) do
+      {:ok, pid} =
+        Task.Supervisor.start_child(Listener.TaskSupervisor, fn -> serve_request(socket) end)
+
       :ssl.controlling_process(socket, pid)
       accepter_loop(listen_socket)
     else
@@ -55,34 +53,40 @@ defmodule Listener do
         try do
           handle_data(socket, data)
         rescue
-          e in RuntimeError -> Logger.error e.message
+          e in RuntimeError -> Logger.error(e.message)
         end
+
         serve_request(socket)
-      {:error, _reason} -> nil
+
+      {:error, _reason} ->
+        nil
     end
   end
 
   defp handle_data(socket, packed_data) do
     [command | args] = unpack(packed_data)
+
     case command do
       "metric" ->
         data = args |> Enum.map(&fetch_metric/1) |> Map.new() |> pack()
         :ssl.send(socket, data)
+
       _ ->
         :error
     end
   end
 
   defp fetch_metric(key) do
-    key_atom = case key do
-      "cpu" -> :cpu
-      "memory" -> :memory
-      "disk" -> :disk
-      "network" -> :network
-      "uptime" -> :uptime
-      "loadavg" -> :loadavg
-      "userlist" -> :userlist
-    end
+    key_atom =
+      case key do
+        "cpu" -> :cpu
+        "memory" -> :memory
+        "disk" -> :disk
+        "network" -> :network
+        "uptime" -> :uptime
+        "loadavg" -> :loadavg
+        "userlist" -> :userlist
+      end
 
     :ets.lookup(:metric, key_atom) |> List.first()
   end
@@ -91,7 +95,7 @@ defmodule Listener do
     data
     |> Msgpax.pack!()
     |> IO.iodata_to_binary()
-    |> Base.encode64
+    |> Base.encode64()
   end
 
   defp unpack(data) do

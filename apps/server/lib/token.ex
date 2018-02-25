@@ -1,7 +1,7 @@
 defmodule Token do
   def get_token(permission, secret) do
     header =
-      %{"typ" => "JWT", "alg": "HS256"}
+      %{"typ" => "JWT", alg: "HS256"}
       |> encode()
 
     payload =
@@ -9,7 +9,7 @@ defmodule Token do
         "iss" => "watchcat",
         "sub" => "Authentication token for API",
         "iat" => DateTime.utc_now() |> DateTime.to_unix(),
-        "perm" => permission,
+        "perm" => permission
       }
       |> encode()
 
@@ -24,8 +24,7 @@ defmodule Token do
   end
 
   def get_payload(token, secret) do
-    [header_encoded, payload_encoded, signature_encoded] =
-      token |> String.split(".")
+    [header_encoded, payload_encoded, signature_encoded] = token |> String.split(".")
 
     calculated_signature =
       :crypto.hmac(:sha256, secret, header_encoded <> "." <> payload_encoded)
@@ -33,9 +32,11 @@ defmodule Token do
       |> String.replace("=", "")
 
     if calculated_signature == signature_encoded do
-      payload = payload_encoded
-      |> Base.decode64!()
-      |> Poison.decode!()
+      payload =
+        payload_encoded
+        |> Base.decode64!()
+        |> Poison.decode!()
+
       {:ok, payload}
     else
       {:error, :invalid_signature}

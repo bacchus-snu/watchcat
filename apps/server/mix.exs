@@ -30,7 +30,7 @@ defmodule Server.MixProject do
       {:cowboy, "~> 2.2"},
       {:poison, "~> 3.1"},
       {:ex2ms, "~> 1.0"},
-      {:ssl_verify_fun, git: "https://github.com/deadtrickster/ssl_verify_fun.erl", tag: "1.1.3"},
+      {:ssl_verify_fun, git: "https://github.com/deadtrickster/ssl_verify_fun.erl", tag: "1.1.3"}
     ]
   end
 end

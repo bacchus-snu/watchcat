@@ -24,17 +24,17 @@ defmodule Server do
 
   defp start_cowboy() do
     Logger.info("Starting cowboy")
-    router = :cowboy_router.compile([
-      {:"_", [
-        {"/api/metric/[:machine]", HTTPHandler.MetricReq, []},
-        {"/api/machines", HTTPHandler.MachineReq, []},
-      ]}
-    ])
-    {:ok, _} = :cowboy.start_clear(
-      :api_server,
-      [port: 10102],
-      %{env: %{dispatch: router}}
-    )
+
+    router =
+      :cowboy_router.compile([
+        {:_,
+         [
+           {"/api/metric/[:machine]", HTTPHandler.MetricReq, []},
+           {"/api/machines", HTTPHandler.MachineReq, []}
+         ]}
+      ])
+
+    {:ok, _} = :cowboy.start_clear(:api_server, [port: 10102], %{env: %{dispatch: router}})
   end
 
   defp init_secret_key() do
@@ -49,6 +49,7 @@ defmodule Server do
       File.mkdir_p!(priv_path)
       File.write(secret_key_path, random_secret)
     end
+
     :ets.new(:secret, [:named_table])
     :ets.insert(:secret, {:secret, File.read!(secret_key_path)})
   end
