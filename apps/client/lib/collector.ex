@@ -9,12 +9,9 @@ defmodule Collector do
     # Setup ETS table
     :ets.new(:metric, [:named_table])
 
-    Enum.each(
-      [:cpu, :memory, :disk, :network, :uptime, :loadavg, :userlist],
-      fn key ->
-        :ets.insert(:metric, {key, :not_available})
-      end
-    )
+    Enum.each([:cpu, :memory, :disk, :network, :uptime, :loadavg, :userlist], fn key ->
+      :ets.insert(:metric, {key, :not_available})
+    end)
 
     metric_collection()
     {:ok, state}
@@ -34,10 +31,10 @@ defmodule Collector do
 
   defp task_collect_metric() do
     metrics_raw = [
-      {:cpu_raw, Metric.fetch_cpu_usage},
-      {:memory_raw, Metric.fetch_memory_usage},
-      {:disk_raw, Metric.fetch_disk_usage},
-      {:network_raw, Metric.fetch_network_usage},
+      {:cpu_raw, Metric.fetch_cpu_usage()},
+      {:memory_raw, Metric.fetch_memory_usage()},
+      {:disk_raw, Metric.fetch_disk_usage()},
+      {:network_raw, Metric.fetch_network_usage()}
     ]
 
     extract = fn res ->
@@ -47,8 +44,7 @@ defmodule Collector do
       end
     end
 
-    metrics_raw =
-      Enum.map(metrics_raw, fn {key, res} -> {key, res |> extract.()} end)
+    metrics_raw = Enum.map(metrics_raw, fn {key, res} -> {key, res |> extract.()} end)
 
     [cpu, memory, disk, network] = metrics_raw
 
@@ -58,9 +54,9 @@ defmodule Collector do
       {:disk, calculate_disk_usage(disk)},
       {:network, calculate_network_usage(network)},
       # don't need to calculate
-      {:uptime, Metric.fetch_uptime |> extract.()},
-      {:loadavg, Metric.fetch_loadavg |> extract.()},
-      {:userlist, Metric.fetch_userlist |> extract.()}
+      {:uptime, Metric.fetch_uptime() |> extract.()},
+      {:loadavg, Metric.fetch_loadavg() |> extract.()},
+      {:userlist, Metric.fetch_userlist() |> extract.()}
     ]
 
     # Update new metric information
@@ -75,16 +71,17 @@ defmodule Collector do
         :not_available
 
       curr ->
-        case :ets.lookup(:metric, :cpu_raw) |> List.first do
+        case :ets.lookup(:metric, :cpu_raw) |> List.first() do
           nil ->
             :not_available
+
           {:cpu_raw, prev} ->
             for {prev_core, curr_core} <- Enum.zip(prev, curr),
-              name = prev_core["name"],
-              idle = curr_core["idle"] - prev_core["idle"],
-              total = curr_core["total"] - prev_core["total"],
-              usage_percent = ((total - idle) / total) * 100 do
-                %{"name" => name, "usage" => usage_percent}
+                name = prev_core["name"],
+                idle = curr_core["idle"] - prev_core["idle"],
+                total = curr_core["total"] - prev_core["total"],
+                usage_percent = (total - idle) / total * 100 do
+              %{"name" => name, "usage" => usage_percent}
             end
         end
     end
@@ -103,6 +100,7 @@ defmodule Collector do
         swap_total = m["SwapTotal"]
         swap_free = m["SwapFree"]
         available = total - (used - buffer - cached)
+
         %{
           "total" => total,
           "used" => used,
@@ -110,7 +108,7 @@ defmodule Collector do
           "cached" => cached,
           "swap_total" => swap_total,
           "swap_free" => swap_free,
-          "available" => available,
+          "available" => available
         }
     end
   end
@@ -131,7 +129,7 @@ defmodule Collector do
             "used" => used,
             "filesystem" => filesystem,
             "mountpoint" => mountpoint,
-            "used_percent" => (used / total) * 100,
+            "used_percent" => used / total * 100
           }
         end
     end
@@ -143,17 +141,19 @@ defmodule Collector do
         :not_available
 
       curr ->
-        case :ets.lookup(:metric, :network_raw) |> List.first do
+        case :ets.lookup(:metric, :network_raw) |> List.first() do
           nil ->
             :not_available
+
           {:network_raw, prev} ->
             for {pn, cn} <- Enum.zip(prev, curr),
-              name = pn["name"],
-              rx = cn["rx"] - pn["rx"], tx = cn["tx"] - pn["tx"],
-              # TODO: more precise time interval
-              rx_speed = rx / 1024,
-              tx_speed = tx / 1024 do
-                %{"name" => name, "tx_speed" => tx_speed, "rx_speed" => rx_speed}
+                name = pn["name"],
+                rx = cn["rx"] - pn["rx"],
+                tx = cn["tx"] - pn["tx"],
+                # TODO: more precise time interval
+                rx_speed = rx / 1024,
+                tx_speed = tx / 1024 do
+              %{"name" => name, "tx_speed" => tx_speed, "rx_speed" => rx_speed}
             end
         end
     end
@@ -163,5 +163,4 @@ defmodule Collector do
     interval = Application.get_env(:client, :general) |> Keyword.fetch!(:collect_interval)
     Process.send_after(self(), :collect_metric, interval)
   end
-
 end

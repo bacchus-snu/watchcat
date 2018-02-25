@@ -27,11 +27,10 @@ defmodule ClientMetricCollector do
   defp task_crawl_client() do
     clients = :dets.select(:clients, [{:"$1", [], [:"$1"]}])
 
-    clients |>
-    Enum.each(fn client -> Task.Supervisor.start_child(
-      ClientMetricCollector.Crawler,
-      fn -> crawl(client) end
-    ) end)
+    clients
+    |> Enum.each(fn client ->
+      Task.Supervisor.start_child(ClientMetricCollector.Crawler, fn -> crawl(client) end)
+    end)
   end
 
   defp crawl(client) do
@@ -39,8 +38,9 @@ defmodule ClientMetricCollector do
     {name, info} = client
     %{"name" => ^name, "host" => host, "fingerprint" => fingerprint} = info
 
-    command = ["metric", "cpu", "memory", "disk", "network", "uptime", "loadavg", "userlist"]
-              |> pack()
+    command =
+      ["metric", "cpu", "memory", "disk", "network", "uptime", "loadavg", "userlist"]
+      |> pack()
 
     # Caution: `host` must be charlist
     general_config = Application.get_env(:server, :general)
@@ -50,31 +50,39 @@ defmodule ClientMetricCollector do
     cert_path = general_config |> Keyword.fetch!(:cert_path)
     key_path = general_config |> Keyword.fetch!(:key_path)
     cacert_path = Application.app_dir(:server, "priv") |> Path.join("cacert.pem")
+
     opts = [
       :binary,
       active: false,
-      verify_fun: {&:ssl_verify_fingerprint.verify_fun/3,
-        [{:check_fingerprint, {:sha256, fingerprint}}]},
+      verify_fun:
+        {&:ssl_verify_fingerprint.verify_fun/3, [{:check_fingerprint, {:sha256, fingerprint}}]},
       verify: :verify_peer,
       certfile: cert_path,
       keyfile: key_path,
-      cacertfile: cacert_path,
+      cacertfile: cacert_path
     ]
-    metric_data = case :ssl.connect(host, port, opts, timeout) do
-      {:ok, socket} ->
-        :ssl.send(socket, command <> "\n")
-        case :ssl.recv(socket, 0, timeout) do
-          {:ok, data} ->
-            :ssl.close(socket)
-            data |> unpack()
 
-          {:error, _reason} -> :not_available
-        end
+    metric_data =
+      case :ssl.connect(host, port, opts, timeout) do
+        {:ok, socket} ->
+          :ssl.send(socket, command <> "\n")
 
-      {:error, {:tls_alert, _reason}} -> :invalid_connection
+          case :ssl.recv(socket, 0, timeout) do
+            {:ok, data} ->
+              :ssl.close(socket)
+              data |> unpack()
 
-      {:error, _reason} -> :not_available
-    end
+            {:error, _reason} ->
+              :not_available
+          end
+
+        {:error, {:tls_alert, _reason}} ->
+          :invalid_connection
+
+        {:error, _reason} ->
+          :not_available
+      end
+
     :ets.insert(:client_metrics, {name, metric_data})
   end
 
@@ -82,7 +90,7 @@ defmodule ClientMetricCollector do
     data
     |> Msgpax.pack!()
     |> IO.iodata_to_binary()
-    |> Base.encode64
+    |> Base.encode64()
   end
 
   defp unpack(data) do
@@ -96,5 +104,4 @@ defmodule ClientMetricCollector do
     interval = Application.get_env(:server, :general) |> Keyword.fetch!(:crawl_interval)
     Process.send_after(self(), :crawl_client, interval)
   end
-
 end

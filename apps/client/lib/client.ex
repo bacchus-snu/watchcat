@@ -16,17 +16,22 @@ defmodule Client do
     unless File.exists?(cert) and File.exists?(key) do
       File.mkdir_p!(cert_path)
 
-      {_, 0} = System.cmd(
-        "openssl",
-        ["req",
-         "-x509",
-         "-newkey", "rsa:4096",
-         "-keyout", key,
-         "-out", cert,
-         "-days", "365",
-         "-nodes",
-         "-batch",
-         "-subj", "/C=KR/O=Bacchus/OU=group/CN=contact@bacchus.snucse.org"
+      {_, 0} =
+        System.cmd("openssl", [
+          "req",
+          "-x509",
+          "-newkey",
+          "rsa:4096",
+          "-keyout",
+          key,
+          "-out",
+          cert,
+          "-days",
+          "365",
+          "-nodes",
+          "-batch",
+          "-subj",
+          "/C=KR/O=Bacchus/OU=group/CN=contact@bacchus.snucse.org"
         ])
     end
   end

@@ -10,11 +10,10 @@ defmodule ServerSupervisor do
   def init(_args) do
     children = [
       ClientMetricCollector,
-      {Task.Supervisor, name: ClientMetricCollector.Crawler},
+      {Task.Supervisor, name: ClientMetricCollector.Crawler}
       # more children...
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
   end
-
 end

@@ -13,11 +13,9 @@ defmodule ClientSupervisor do
     children = [
       Collector,
       {Task.Supervisor, name: Listener.TaskSupervisor},
-      {Listener, port},
+      {Listener, port}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
   end
-
 end
-
