@@ -26,7 +26,8 @@ defmodule Client.MixProject do
   defp deps do
     [
       {:msgpax, "~>2.0"},
-      {:ssl_verify_fun, git: "https://github.com/deadtrickster/ssl_verify_fun.erl", tag: "1.1.3"}
+      {:ssl_verify_fun, git: "https://github.com/deadtrickster/ssl_verify_fun.erl", tag: "1.1.3"},
+      {:distillery, "~> 1.5", runtime: false}
     ]
   end
 end

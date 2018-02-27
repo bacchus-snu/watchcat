@@ -1,4 +1,5 @@
 %{
+  "distillery": {:hex, :distillery, "1.5.2", "eec18b2d37b55b0bcb670cf2bcf64228ed38ce8b046bb30a9b636a6f5a4c0080", [:mix], [], "hexpm"},
   "msgpax": {:hex, :msgpax, "2.1.1", "833bc9ce6d3e073cf966fec94d3f976ca7100685b4f0efb6e30ef512f2e8a4d7", [:mix], [{:plug, "~> 1.0", [hex: :plug, repo: "hexpm", optional: true]}], "hexpm"},
   "ssl_verify_fun": {:git, "https://github.com/deadtrickster/ssl_verify_fun.erl", "c7d7349e1cf25e53116f602c741d616aac16eda9", [tag: "1.1.3"]},
 }
