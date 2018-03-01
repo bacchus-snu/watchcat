@@ -8,7 +8,7 @@ defmodule Client do
   end
 
   defp init_cert() do
-    cert_path = Application.app_dir(:client, "priv/client_cert")
+    cert_path = Application.app_dir(:client, "priv/ssl")
     cert = Path.join(cert_path, "cert.pem")
     key = Path.join(cert_path, "key.pem")
 
@@ -34,5 +34,8 @@ defmodule Client do
           "/C=KR/O=Bacchus/OU=group/CN=contact@bacchus.snucse.org"
         ])
     end
+
+    :ok = File.chmod(cert, 0o400)
+    :ok = File.chmod(key, 0o400)
   end
 end

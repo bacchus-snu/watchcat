@@ -10,4 +10,5 @@ config :server, :general,
 
 config :server, :network,
   client_port: 10101,
+  api_port: 10102,
   timeout: 1000

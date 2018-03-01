@@ -62,6 +62,14 @@ defmodule ClientMetricCollector do
       cacertfile: cacert_path
     ]
 
+    reason_to_string = fn reason ->
+      if is_binary(reason) do
+        reason
+      else
+        reason |> inspect
+      end
+    end
+
     metric_data =
       case :ssl.connect(host, port, opts, timeout) do
         {:ok, socket} ->
@@ -70,17 +78,17 @@ defmodule ClientMetricCollector do
           case :ssl.recv(socket, 0, timeout) do
             {:ok, data} ->
               :ssl.close(socket)
-              data |> unpack()
+              {:ok, data |> unpack()}
 
-            {:error, _reason} ->
-              :not_available
+            {:error, reason} ->
+              {:error, reason |> reason_to_string.()}
           end
 
-        {:error, {:tls_alert, _reason}} ->
-          :invalid_connection
+        {:error, {:tls_alert, reason}} ->
+          {:error, "tls_alert: " <> reason}
 
-        {:error, _reason} ->
-          :not_available
+        {:error, reason} ->
+          {:error, reason |> reason_to_string.()}
       end
 
     :ets.insert(:client_metrics, {name, metric_data})

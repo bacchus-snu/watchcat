@@ -34,7 +34,11 @@ defmodule Server do
          ]}
       ])
 
-    {:ok, _} = :cowboy.start_clear(:api_server, [port: 10102], %{env: %{dispatch: router}})
+    api_port =
+      Application.get_env(:server, :network)
+      |> Keyword.fetch!(:api_port)
+
+    {:ok, _} = :cowboy.start_clear(:api_server, [port: api_port], %{env: %{dispatch: router}})
   end
 
   defp init_secret_key() do
