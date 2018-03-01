@@ -8,7 +8,7 @@ defmodule Client do
   end
 
   defp init_cert() do
-    cert_path = Application.app_dir(:client, "priv/client_cert")
+    cert_path = Application.app_dir(:client, "priv/ssl")
     cert = Path.join(cert_path, "cert.pem")
     key = Path.join(cert_path, "key.pem")
 

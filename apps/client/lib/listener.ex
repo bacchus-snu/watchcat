@@ -7,10 +7,10 @@ defmodule Listener do
   end
 
   def accept(port) do
-    priv_path = Application.app_dir(:client, "priv")
-    cert = Path.join(priv_path, "client_cert/cert.pem")
-    key = Path.join(priv_path, "client_cert/key.pem")
-    cacert = Path.join(priv_path, "cacert/cacert.pem")
+    ssl_dir = Application.app_dir(:client, "priv/ssl")
+    cert = Path.join(ssl_dir, "cert.pem")
+    key = Path.join(ssl_dir, "key.pem")
+    cacert = Path.join(ssl_dir, "cacert.pem")
     server_domain = Application.get_env(:client, :general) |> Keyword.fetch!(:server_domain)
 
     opts = [

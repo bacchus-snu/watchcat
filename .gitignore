@@ -41,4 +41,4 @@ client_db
 
 # certificates & keys
 *.pem
-!**/priv/cacert/cacert.pem
+!**/cacert.pem
