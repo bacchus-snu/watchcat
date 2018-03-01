@@ -78,8 +78,7 @@ defmodule ClientMetricCollector do
           case :ssl.recv(socket, 0, timeout) do
             {:ok, data} ->
               :ssl.close(socket)
-              [status, obj] = data |> unpack()
-              {String.to_atom(status), obj}
+              {:ok, data |> unpack()}
 
             {:error, reason} ->
               {:error, reason |> reason_to_string.()}

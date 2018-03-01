@@ -4,20 +4,22 @@ defmodule HTTPHandler.MetricReq do
   def init(req0 = %{method: "GET"}, state) do
     machine = :cowboy_req.binding(:machine, req0)
 
+    encode_metric = fn {name, metric_data} ->
+      case metric_data do
+        {:ok, metric} ->
+          %{"name" => name, "status" => "ok", "data" => metric}
+        {:error, reason} ->
+          %{"name" => name, "status" => "error", "reason" => reason}
+      end
+    end
     {code, contents} =
       case machine do
         :undefined ->
-          machines_raw =
-            :ets.select(
-              :client_metrics,
-              fun do
-                x -> x
-              end
-            )
+          machines_raw = :ets.select(:client_metrics, fun do x -> x end)
 
           machines =
             machines_raw
-            |> Enum.map(fn {x, y} -> %{"name" => x, "metric" => y} end)
+            |> Enum.map(encode_metric)
 
           {200, machines}
 
@@ -32,7 +34,7 @@ defmodule HTTPHandler.MetricReq do
 
           machines =
             machines_raw
-            |> Enum.map(fn {x, y} -> %{"name" => x, "metric" => y} end)
+            |> Enum.map(encode_metric)
 
           case machines do
             [] ->

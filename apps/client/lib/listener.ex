@@ -88,7 +88,17 @@ defmodule Listener do
         "userlist" -> :userlist
       end
 
-    :ets.lookup(:metric, key_atom) |> List.first()
+    {key, data} = :ets.lookup(:metric, key_atom) |> List.first()
+
+    result =
+      case data do
+        {:ok, metric} ->
+          %{"status" => "ok", "data" => metric}
+        {:error, reason} ->
+          %{"status" => "error", "reason" => reason}
+      end
+
+    {key, result}
   end
 
   defp pack(data) do
