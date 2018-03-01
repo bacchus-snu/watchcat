@@ -37,6 +37,7 @@ defmodule Server do
     api_port =
       Application.get_env(:server, :network)
       |> Keyword.fetch!(:api_port)
+
     {:ok, _} = :cowboy.start_clear(:api_server, [port: api_port], %{env: %{dispatch: router}})
   end
 

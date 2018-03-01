@@ -8,14 +8,22 @@ defmodule HTTPHandler.MetricReq do
       case metric_data do
         {:ok, metric} ->
           %{"name" => name, "status" => "ok", "data" => metric}
+
         {:error, reason} ->
           %{"name" => name, "status" => "error", "reason" => reason}
       end
     end
+
     {code, contents} =
       case machine do
         :undefined ->
-          machines_raw = :ets.select(:client_metrics, fun do x -> x end)
+          machines_raw =
+            :ets.select(
+              :client_metrics,
+              fun do
+                x -> x
+              end
+            )
 
           machines =
             machines_raw

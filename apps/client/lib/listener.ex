@@ -94,6 +94,7 @@ defmodule Listener do
       case data do
         {:ok, metric} ->
           %{"status" => "ok", "data" => metric}
+
         {:error, reason} ->
           %{"status" => "error", "reason" => reason}
       end
