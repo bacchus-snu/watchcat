@@ -34,5 +34,8 @@ defmodule Client do
           "/C=KR/O=Bacchus/OU=group/CN=contact@bacchus.snucse.org"
         ])
     end
+
+    :ok = File.chmod(cert, 0o400)
+    :ok = File.chmod(key, 0o400)
   end
 end
