@@ -134,8 +134,10 @@ defmodule HTTPHandler.MachineReq do
 
       general_config = Application.get_env(:server, :general)
       network_config = Application.get_env(:server, :network)
-      [client_port: port, timeout: timeout] = network_config
-      [cert_path: cert_path, key_path: key_path] = general_config
+      port = network_config |> Keyword.fetch!(:client_port)
+      timeout = network_config |> Keyword.fetch!(:timeout)
+      cert_path = general_config |> Keyword.fetch!(:cert_path)
+      key_path = general_config |> Keyword.fetch!(:key_path)
       cacert_path = Application.app_dir(:server, "priv") |> Path.join("cacert.pem")
 
       opts = [
