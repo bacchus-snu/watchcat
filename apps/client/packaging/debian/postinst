@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -e
+
+RAND=`openssl rand -hex 32`
+VMARGS=`find /opt/watchcat-client/ -name "vm.args"`
+echo "-setcookie $RAND" >> $VMARGS
+chmod 400 $VMARGS
+
+systemctl enable watchcat-client.service
+systemctl start watchcat-client.service
+systemctl stop watchcat-client.service
+systemctl start watchcat-client.service
+
+exit 0

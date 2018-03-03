@@ -1,0 +1,11 @@
+Source: watchcat-client
+Section: misc
+Priority: optional
+Maintainer: Bacchus <contact@bacchus.snucse.org>
+Build-Depends: debhelper (>=9)
+Standards-Version: 3.9.6
+
+Package: watchcat-client
+Architecture: all
+Depends: ${misc:Depends}
+Description: Monitoring tool for SNUCSE machines
