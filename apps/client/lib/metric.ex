@@ -110,7 +110,6 @@ defmodule Metric do
 
     userlist =
       output
-      |> String.trim()
       |> String.split("\n")
       |> List.first()
       |> String.split()
