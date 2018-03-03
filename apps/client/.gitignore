@@ -23,4 +23,14 @@ erl_crash.dump
 client-*.tar
 
 /rel/
-/packaging/src/watchcat-client/
+/**/dist/
+/**/watchcat-client/
+*.debian.*
+*.build
+*.changes
+*.tar.gz
+*.tar.xz
+*.dsc
+*.deb
+*.upload
+*.diff.gz

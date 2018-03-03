@@ -1,0 +1,18 @@
+#!/bin/bash
+
+rm -rf ./src/watchcat-client
+
+dir=$(pwd)
+cd ..
+
+rm -rf ./_build/prod/rel
+
+MIX_ENV=prod mix release --env=prod --no-tar
+
+cp -r ./_build/prod/rel/client $dir/src/watchcat-client
+cd $dir
+
+find . -name 'cert.pem' -delete
+find . -name 'key.pem' -delete
+
+exit 0

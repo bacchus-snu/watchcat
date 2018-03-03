@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Usage(create source package): ../build
+# Usage(create binary package): ../build --binary
+
+arg1="$1"
+
+if [[ ! -d src ]]; then
+  echo 'Execute this script in package directory'
+  exit 1
+fi
+
+set -e
+shopt -s extglob
+
+[[ -x prebuild ]] && ./prebuild
+
+version=$(dpkg-parsechangelog --show-field Version)
+version_noepoch=$(echo "$version" | cut -d: -f2-)
+version_upstream=${version_noepoch/%-*([^-])/}
+pkgname=$(dpkg-parsechangelog --show-field Source)
+tgzname="$pkgname"_"$version_upstream".orig.tar.gz
+
+rm -rf dist
+rm -f -- *.diff.gz *.build *.dsc *.changes *.upload *.deb
+
+if [[ "$arg1" = "--binary" ]]; then
+  cp -r src dist
+  cp -r debian dist/debian
+else
+  if  [[ ! -f "$tgzname" ]]; then
+    tar -C src -czf "$tgzname" ./
+  fi
+  mkdir dist
+  cp -r debian dist/debian
+fi
+
+dir=$(pwd)
+cd dist
+if [[ "$arg1" = "--binary" ]]; then
+  debuild --no-tgz-check -b
+else
+  debuild --tgz-check -S
+fi
+cd "$dir"
+exit 0
