@@ -2,8 +2,6 @@ defmodule HTTPHandler.MetricReq do
   import Ex2ms
 
   def init(req0 = %{method: "GET"}, state) do
-    machine = :cowboy_req.binding(:machine, req0)
-
     encode_metric = fn {name, metric_data} ->
       case metric_data do
         {:ok, metric} ->
@@ -14,58 +12,41 @@ defmodule HTTPHandler.MetricReq do
       end
     end
 
+    machine_name = :cowboy_req.binding(:machine_name, req0)
+
     {code, contents} =
-      case machine do
+      case machine_name do
+        # /api/metric
         :undefined ->
-          machines_raw =
-            :ets.select(
-              :client_metrics,
-              fun do
-                x -> x
-              end
-            )
-
-          machines =
-            machines_raw
+          machine_metrics =
+            :ets.match_object(:client_metrics, :_)
             |> Enum.map(encode_metric)
 
-          {200, machines}
+          {200, machine_metrics}
 
-        machine_key ->
-          machines_raw =
-            :ets.select(
-              :client_metrics,
-              fun do
-                {key, metric} when key == ^machine_key -> {key, metric}
-              end
-            )
+        # /api/metric/<machine_name>
+        machine_name ->
+          case :ets.lookup(:client_metrics, machine_name) do
+            [machine_metric] ->
+              {200, machine_metric |> encode_metric.()}
 
-          machines =
-            machines_raw
-            |> Enum.map(encode_metric)
-
-          case machines do
-            [] ->
+            _ ->
               {404, ""}
-
-            [machine | _] ->
-              {200, machine}
           end
       end
 
-    contents =
+    {type, contents} =
       case code do
         200 ->
-          contents |> Poison.encode!()
-
+          {"application/json", contents |> Poison.encode!()}
         _ ->
-          contents
+          {"text/plain", contents}
       end
 
     req =
       :cowboy_req.reply(
         code,
-        %{"content-type" => "application/json"},
+        %{"content-type" => type},
         contents,
         req0
       )
