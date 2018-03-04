@@ -1,3 +1,9 @@
+watchcat-client (1.2-1) xenial; urgency=medium
+
+  * Bug fix at fetching userlist when there is no user
+
+ -- Jae Hyeon Park <skystar@bacchus.snucse.org>  Sun, 04 Mar 2018 16:44:11 +0900
+
 watchcat-client (1.1-1) xenial; urgency=medium
 
   * Bug fixes
