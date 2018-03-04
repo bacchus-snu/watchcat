@@ -39,6 +39,7 @@ defmodule HTTPHandler.MetricReq do
       case code do
         200 ->
           {"application/json", contents |> Poison.encode!()}
+
         _ ->
           {"text/plain", contents}
       end
@@ -90,7 +91,7 @@ defmodule HTTPHandler.MachineReq do
     req =
       :cowboy_req.reply(
         200,
-        %{"content-type" => "text/plain"},
+        %{"content-type" => "application/json"},
         contents,
         req0
       )
@@ -142,7 +143,7 @@ defmodule HTTPHandler.MachineReq do
         case result do
           {:ok, fingerprint} ->
             body = %{"name" => name, "host" => host, "fingerprint" => fingerprint}
-            :dets.insert(:clients, {name, body})
+            true = :dets.insert_new(:clients, {name, body})
 
             response_body =
               body
@@ -167,9 +168,9 @@ defmodule HTTPHandler.MachineReq do
   end
 
   def init(req0 = %{method: "DELETE"}, state) do
-    {:secret, secret} = :ets.lookup(:secret, :secret)
+    [secret: secret] = :ets.lookup(:secret, :secret)
 
-    payload =
+    {:ok, payload} =
       :cowboy_req.header("authentication", req0)
       |> Token.get_payload(secret)
 
@@ -179,7 +180,7 @@ defmodule HTTPHandler.MachineReq do
     else
       {:ok, body, req1} = :cowboy_req.read_body(req0, %{length: 1024})
       %{"name" => name} = body |> Poison.decode!()
-      :dets.delete(:clients, name)
+      :ok = :dets.delete(:clients, name)
       req = :cowboy_req.reply(204, %{"content-type" => "text/plain"}, "", req1)
       {:ok, req, state}
     end
