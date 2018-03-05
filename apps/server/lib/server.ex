@@ -30,7 +30,8 @@ defmodule Server do
         {:_,
          [
            {"/api/metric/[:machine_name]", HTTPHandler.MetricReq, []},
-           {"/api/machines", HTTPHandler.MachineReq, []}
+           {"/api/machines", HTTPHandler.MachineReq, []},
+           {"/api/machines/[:machine_name]/tags", HTTPHandler.MachineTagReq, []}
          ]}
       ])
 
