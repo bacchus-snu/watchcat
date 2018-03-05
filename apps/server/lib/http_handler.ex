@@ -126,6 +126,8 @@ defmodule HTTPHandler.MachineReq do
       %{"name" => name, "host" => host} = contents
       host = host |> to_charlist()
       tags = contents |> Map.get("tags", [])
+      true = is_binary(name)
+      true = is_list(tags) and Enum.all?(tags, &is_binary/1)
 
       general_config = Application.get_env(:server, :general)
       network_config = Application.get_env(:server, :network)
