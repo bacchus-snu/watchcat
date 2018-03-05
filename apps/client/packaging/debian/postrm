@@ -2,6 +2,7 @@
 
 set -e
 
-rm -rf /opt/watchcat-client
+find /opt/watchcat-client -name 'cert.pem' -delete
+find /opt/watchcat-client -name 'key.pem' -delete
 
 exit 0
