@@ -1,3 +1,18 @@
+defmodule HTTPHandler do
+  def get_permission(req) do
+    [secret: secret] = :ets.lookup(:secret, :secret)
+
+    {:ok, payload} =
+      :cowboy_req.header("authentication", req)
+      |> Token.get_payload(secret)
+
+    payload |> Map.get("perm", "normal")
+  rescue
+    _ ->
+    "normal"
+  end
+end
+
 defmodule HTTPHandler.MetricReq do
   import Ex2ms
 
@@ -100,19 +115,19 @@ defmodule HTTPHandler.MachineReq do
   end
 
   def init(req0 = %{method: "POST"}, state) do
-    [secret: secret] = :ets.lookup(:secret, :secret)
+    permission = req0 |> HTTPHandler.get_permission()
 
-    {:ok, payload} =
-      :cowboy_req.header("authentication", req0)
-      |> Token.get_payload(secret)
-
-    if payload["perm"] != "admin" do
+    if permission != "admin" do
       req = :cowboy_req.reply(403, %{"content-type" => "text/plain"}, "", req0)
       {:ok, req, state}
     else
       {:ok, body, req1} = :cowboy_req.read_body(req0, %{length: 1024})
-      %{"name" => name, "host" => host} = body |> Poison.decode!()
+      contents = body |> Poison.decode!()
+      %{"name" => name, "host" => host} = contents
       host = host |> to_charlist()
+      tags = contents |> Map.get("tags", [])
+      true = is_binary(name)
+      true = is_list(tags) and Enum.all?(tags, &is_binary/1)
 
       general_config = Application.get_env(:server, :general)
       network_config = Application.get_env(:server, :network)
@@ -142,7 +157,7 @@ defmodule HTTPHandler.MachineReq do
       req =
         case result do
           {:ok, fingerprint} ->
-            body = %{"name" => name, "host" => host, "fingerprint" => fingerprint}
+            body = %{"name" => name, "host" => host, "fingerprint" => fingerprint, "tags" => tags}
             true = :dets.insert_new(:clients, {name, body})
 
             response_body =
@@ -168,13 +183,9 @@ defmodule HTTPHandler.MachineReq do
   end
 
   def init(req0 = %{method: "DELETE"}, state) do
-    [secret: secret] = :ets.lookup(:secret, :secret)
+    permission = req0 |> HTTPHandler.get_permission()
 
-    {:ok, payload} =
-      :cowboy_req.header("authentication", req0)
-      |> Token.get_payload(secret)
-
-    if payload["perm"] != "admin" do
+    if permission != "admin" do
       req = :cowboy_req.reply(403, %{"content-type" => "text/plain"}, "", req0)
       {:ok, req, state}
     else
@@ -191,6 +202,100 @@ defmodule HTTPHandler.MachineReq do
   end
 
   # fall back other method
+  def init(req0, state) do
+    req =
+      :cowboy_req.reply(
+        405,
+        %{"content-type" => "text/plain"},
+        "",
+        req0
+      )
+
+    {:ok, req, state}
+  end
+end
+
+defmodule HTTPHandler.MachineTagReq do
+  def init(req0 = %{method: "PUT"}, state) do
+    permission = req0 |> HTTPHandler.get_permission()
+
+    if permission != "admin" do
+      req = :cowboy_req.reply(403, %{"content-type" => "text/plain"}, "", req0)
+      {:ok, req, state}
+    else
+      {:ok, body, req1} = :cowboy_req.read_body(req0, %{length: 1024})
+      new_tags = body |> Poison.decode!()
+      true = is_list(new_tags) and Enum.all?(new_tags, &is_binary/1)
+
+      machine_name = :cowboy_req.binding(:machine_name, req1)
+      [{^machine_name, old}] = :dets.lookup(:clients, machine_name)
+      new = old |> Map.put("tags", new_tags)
+
+      :ok = :dets.insert(:clients, {machine_name, new})
+
+      req = :cowboy_req.reply(200, %{"content-type" => "text/plain"}, "", req1)
+      {:ok, req, state}
+    end
+  rescue
+    _ ->
+      req = :cowboy_req.reply(400, %{"content-type" => "text/plain"}, "", req0)
+      {:ok, req, state}
+  end
+
+  def init(req0 = %{method: "POST"}, state) do
+    permission = req0 |> HTTPHandler.get_permission()
+
+    if permission != "admin" do
+      req = :cowboy_req.reply(403, %{"content-type" => "text/plain"}, "", req0)
+      {:ok, req, state}
+    else
+      {:ok, body, req1} = :cowboy_req.read_body(req0, %{length: 1024})
+      new_tag = body |> Poison.decode!()
+      true = is_binary(new_tag)
+
+      machine_name = :cowboy_req.binding(:machine_name, req1)
+      [{^machine_name, old}] = :dets.lookup(:clients, machine_name)
+      new_tags = [new_tag | old["tags"]] |> Enum.uniq()
+      new = old |> Map.put("tags", new_tags)
+
+      :ok = :dets.insert(:clients, {machine_name, new})
+
+      req = :cowboy_req.reply(200, %{"content-type" => "text/plain"}, "", req1)
+      {:ok, req, state}
+    end
+  rescue
+    _ ->
+      req = :cowboy_req.reply(400, %{"content-type" => "text/plain"}, "", req0)
+      {:ok, req, state}
+  end
+
+  def init(req0 = %{method: "DELETE"}, state) do
+    permission = req0 |> HTTPHandler.get_permission()
+
+    if permission != "admin" do
+      req = :cowboy_req.reply(403, %{"content-type" => "text/plain"}, "", req0)
+      {:ok, req, state}
+    else
+      {:ok, body, req1} = :cowboy_req.read_body(req0, %{length: 1024})
+      tag = body |> Poison.decode!()
+      true = is_binary(tag)
+
+      machine_name = :cowboy_req.binding(:machine_name, req1)
+      [{^machine_name, old}] = :dets.lookup(:clients, machine_name)
+      new_tags = old["tags"] |> List.delete(tag)
+      new = old |> Map.put("tags", new_tags)
+
+      :ok = :dets.insert(:clients, {machine_name, new})
+
+      req = :cowboy_req.reply(200, %{"content-type" => "text/plain"}, "", req1)
+      {:ok, req, state}
+    end
+  rescue
+    _ ->
+      req = :cowboy_req.reply(400, %{"content-type" => "text/plain"}, "", req0)
+      {:ok, req, state}
+  end
+
   def init(req0, state) do
     req =
       :cowboy_req.reply(
