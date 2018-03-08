@@ -73,6 +73,10 @@ defmodule Listener do
         data = args |> Enum.map(&fetch_metric/1) |> Map.new() |> pack()
         :ssl.send(socket, data)
 
+      "command" ->
+        data = args |> List.first() |> invoke_command() |> pack()
+        :ssl.send(socket, data)
+
       _ -> Logger.error("not supported command: " <> command)
     end
   end
@@ -105,6 +109,17 @@ defmodule Listener do
       end
 
     {key, result}
+  end
+
+  defp invoke_command(command) when is_binary(command) do
+    File.write!("_running_script", command, [:read, :write, :execute])
+    {result, exit_code} = System.cmd("bash", ["_running_script"], stderr_to_stdout: true)
+    File.rm!("_running_script")
+
+    %{
+      result: result,
+      exit_code: exit_code
+    }
   end
 
   defp pack(data) do
