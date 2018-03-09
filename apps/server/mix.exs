@@ -11,7 +11,8 @@ defmodule Server.MixProject do
       lockfile: "./mix.lock",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      aliases: aliases(),
     ]
   end
 
@@ -30,6 +31,12 @@ defmodule Server.MixProject do
       {:ex2ms, "~> 1.0"},
       {:ssl_verify_fun, git: "https://github.com/deadtrickster/ssl_verify_fun.erl", tag: "1.1.3"},
       {:distillery, "~> 1.5", runtime: false}
+    ]
+  end
+
+  defp aliases do
+    [
+      test: "test --no-start"
     ]
   end
 end
