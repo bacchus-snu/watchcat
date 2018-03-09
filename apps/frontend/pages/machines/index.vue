@@ -24,7 +24,9 @@ import MachineRow from '~/components/MachineRow.vue'
 
 export default {
   data () {
-    machine_list: []
+    return {
+      machine_list: []
+    }
   },
   asyncData ({ app }) {
     return app.$axios.$get('/api/machines')
