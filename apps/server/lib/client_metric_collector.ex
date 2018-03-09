@@ -9,14 +9,14 @@ defmodule ClientMetricCollector do
     :client_metrics = :ets.new(:client_metrics, [:named_table, :public])
 
     # Start routine
-    crawl_client()
+    routine()
     {:ok, state}
   end
 
   def handle_info(:crawl_client, state) do
-    task_crawl_client()
-
     crawl_client()
+
+    routine()
     {:noreply, state}
   end
 
@@ -24,7 +24,7 @@ defmodule ClientMetricCollector do
     {:noreply, state}
   end
 
-  defp task_crawl_client() do
+  defp crawl_client() do
     clients = :dets.select(:clients, [{:"$1", [], [:"$1"]}])
 
     clients
@@ -108,7 +108,7 @@ defmodule ClientMetricCollector do
     |> Msgpax.unpack!()
   end
 
-  defp crawl_client() do
+  defp routine() do
     interval = Application.get_env(:server, :general) |> Keyword.fetch!(:crawl_interval)
     Process.send_after(self(), :crawl_client, interval)
   end
