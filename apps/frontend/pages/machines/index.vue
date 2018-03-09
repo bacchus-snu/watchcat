@@ -30,7 +30,11 @@ export default {
     return app.$axios.$get('/api/machines')
       .then(function(res) {
         return {
-          machine_list: res
+          machine_list: res.sort(function(a,b) {
+            if (a.name > b.name)return 1
+            else if (a.name < b.name)return -1
+            else return 0
+          })
         }
       })
   },
