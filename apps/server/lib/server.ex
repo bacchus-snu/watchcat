@@ -29,9 +29,9 @@ defmodule Server do
       :cowboy_router.compile([
         {:_,
          [
-           {"/api/metric/[:machine_name]", HTTPHandler.MetricReq, []},
-           {"/api/machines/[:machine_name]", HTTPHandler.MachineReq, []},
-           {"/api/machines/:machine_name/tags", HTTPHandler.MachineTagReq, []}
+           {"/api/metric/[:machine_name]", API.Metric, []},
+           {"/api/machines/[:machine_name]", API.Machine, []},
+           {"/api/machines/:machine_name/tags", API.Tag, []}
          ]}
       ])
 
