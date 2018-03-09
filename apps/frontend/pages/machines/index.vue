@@ -21,17 +21,16 @@
 
 <script>
 import MachineRow from '~/components/MachineRow.vue'
-import axios from 'axios'
 
 export default {
   data () {
     machine_list: []
   },
-  asyncData () {
-    return axios.get('http://watchcat.bacchus.snucse.org:10102/api/machines')
+  asyncData ({ app }) {
+    return app.$axios.$get('/api/machines')
       .then(function(res) {
         return {
-          machine_list: res.data
+          machine_list: res
         }
       })
   },

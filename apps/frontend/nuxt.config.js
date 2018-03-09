@@ -17,10 +17,23 @@ module.exports = {
   ** Customize the progress bar color
   */
   loading: { color: '#3B8070' },
+
+  modules: [
+     '@nuxtjs/axios',
+  ],
+
+  axios: {
+    proxy: true
+  },
+
+  proxy: {
+    '/api/': 'http://watchcat.bacchus.snucse.org:10102'
+  },
   /*
   ** Build configuration
   */
   build: {
+    vendor: ['axios'],
     /*
     ** Run ESLint on save
     */
