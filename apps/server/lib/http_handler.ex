@@ -88,25 +88,50 @@ defmodule HTTPHandler.MachineReq do
   import Ex2ms
 
   def init(req0 = %{method: "GET"}, state) do
-    machines =
-      :dets.select(
-        :clients,
-        fun do
-          {x, y} -> y
-        end
-      )
-
     update = fn x -> Map.update!(x, "host", &to_string/1) end
 
-    contents =
-      machines
-      |> Enum.map(update)
-      |> Poison.encode!()
+    machine_name = :cowboy_req.binding(:machine_name, req0)
+
+    {code, contents} =
+      if machine_name == :undefined do
+        machines =
+          :dets.select(
+            :clients,
+            fun do
+              {x, y} -> y
+            end
+          )
+        contents =
+          machines
+          |> Enum.map(update)
+
+        {200, contents}
+      else
+        case :dets.lookup(:clients, machine_name) do
+          [{_, machine}] ->
+            contents =
+              machine
+              |> update.()
+            {200, contents}
+
+          [] ->
+            {404, ""}
+        end
+      end
+
+    {type, contents} =
+      case code do
+        200 ->
+          {"application/json", contents |> Poison.encode!()}
+
+        _ ->
+          {"text/plain", contents}
+      end
 
     req =
       :cowboy_req.reply(
-        200,
-        %{"content-type" => "application/json"},
+        code,
+        %{"content-type" => type},
         contents,
         req0
       )
