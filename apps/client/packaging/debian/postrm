@@ -2,7 +2,6 @@
 
 set -e
 
-find /opt/watchcat-client -name 'cert.pem' -delete
-find /opt/watchcat-client -name 'key.pem' -delete
+echo "currently there is no postrm..."
 
 exit 0
