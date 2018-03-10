@@ -13,15 +13,15 @@ defmodule Collector do
       :ets.insert(:metric, {key, {:error, "initially not available"}})
     end)
 
-    metric_collection()
+    routine()
     {:ok, state}
   end
 
   def handle_info(:collect_metric, state) do
     # do something...
     # TODO: make below ASYNC
-    task_collect_metric()
-    metric_collection()
+    collect_metric()
+    routine()
     {:noreply, state}
   end
 
@@ -29,7 +29,7 @@ defmodule Collector do
     {:noreply, state}
   end
 
-  defp task_collect_metric() do
+  defp collect_metric() do
     # metric has form {:ok, metric} or {:error, reason}
     metrics_raw = [
       {:cpu_raw, Metric.fetch_cpu_usage()},
@@ -160,7 +160,7 @@ defmodule Collector do
       {:error, "previous metric not available"}
   end
 
-  defp metric_collection() do
+  defp routine() do
     interval = Application.get_env(:client, :general) |> Keyword.fetch!(:collect_interval)
     Process.send_after(self(), :collect_metric, interval)
   end
