@@ -18,10 +18,9 @@ defmodule Collector do
   end
 
   def handle_info(:collect_metric, state) do
-    # do something...
     # TODO: make below ASYNC
-    collect_metric()
     routine()
+    collect_metric()
     {:noreply, state}
   end
 
@@ -32,10 +31,10 @@ defmodule Collector do
   defp collect_metric() do
     # metric has form {:ok, metric} or {:error, reason}
     metrics_raw = [
-      {:cpu_raw, Metric.fetch_cpu_usage()},
-      {:memory_raw, Metric.fetch_memory_usage()},
-      {:disk_raw, Metric.fetch_disk_usage()},
-      {:network_raw, Metric.fetch_network_usage()}
+      {:cpu_raw, Metric.fetch_cpu_metric()},
+      {:memory_raw, Metric.fetch_memory_metric()},
+      {:disk_raw, Metric.fetch_disk_metric()},
+      {:network_raw, Metric.fetch_network_metric()}
     ]
 
     [cpu, memory, disk, network] = metrics_raw
@@ -62,7 +61,7 @@ defmodule Collector do
       {:ok, curr} ->
         {:cpu_raw, {:ok, prev}} = :ets.lookup(:metric, :cpu_raw) |> List.first()
 
-        cpuinfo =
+        cpu_info =
           for {prev_core, curr_core} <- Enum.zip(prev, curr),
               name = prev_core["name"],
               idle = curr_core["idle"] - prev_core["idle"],
@@ -71,7 +70,7 @@ defmodule Collector do
             %{"name" => name, "usage" => usage_percent}
           end
 
-        {:ok, cpuinfo}
+        {:ok, cpu_info}
 
       {:error, _} = e ->
         e
@@ -92,7 +91,7 @@ defmodule Collector do
         swap_free = m["SwapFree"]
         available = total - (used - buffer - cached)
 
-        meminfo = %{
+        memory_info = %{
           "total" => total,
           "used" => used,
           "buffer" => buffer,
@@ -102,7 +101,7 @@ defmodule Collector do
           "available" => available
         }
 
-        {:ok, meminfo}
+        {:ok, memory_info}
 
       {:error, _} = e ->
         e
@@ -112,7 +111,7 @@ defmodule Collector do
   defp calculate_disk_usage({:disk_raw, raw}) do
     case raw do
       {:ok, disks} ->
-        diskinfo =
+        disk_info =
           for part <- disks,
               total = part["1024-blocks"],
               used = part["Used"],
@@ -127,7 +126,7 @@ defmodule Collector do
             }
           end
 
-        {:ok, diskinfo}
+        {:ok, disk_info}
 
       {:error, _} = e ->
         e
@@ -139,7 +138,7 @@ defmodule Collector do
       {:ok, curr} ->
         {:network_raw, {:ok, prev}} = :ets.lookup(:metric, :network_raw) |> List.first()
 
-        networkinfo =
+        network_info =
           for {pn, cn} <- Enum.zip(prev, curr),
               name = pn["name"],
               rx = cn["rx"] - pn["rx"],
@@ -150,7 +149,7 @@ defmodule Collector do
             %{"name" => name, "tx_speed" => tx_speed, "rx_speed" => rx_speed}
           end
 
-        {:ok, networkinfo}
+        {:ok, network_info}
 
       {:error, _} = e ->
         e
@@ -163,5 +162,9 @@ defmodule Collector do
   defp routine() do
     interval = Application.get_env(:client, :general) |> Keyword.fetch!(:collect_interval)
     Process.send_after(self(), :collect_metric, interval)
+  end
+
+  defp timestamp() do
+    DateTime.utc_now() |> DateTime.to_unix()
   end
 end
