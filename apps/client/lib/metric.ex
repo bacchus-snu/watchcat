@@ -1,5 +1,5 @@
 defmodule Metric do
-  def fetch_cpu_usage do
+  def fetch_cpu_metric() do
     import String
 
     {output, 0} = System.cmd("cat", ["/proc/stat"])
@@ -20,7 +20,10 @@ defmodule Metric do
       {:error, "system command fail"}
   end
 
-  def fetch_memory_usage do
+  @doc """
+  Fetch the memory metric.
+  """
+  def fetch_memory_metric() do
     {output, 0} = System.cmd("cat", ["/proc/meminfo"])
 
     regex = ~r/(?<key>\S+):\s*(?<value>\d+)/
@@ -38,7 +41,10 @@ defmodule Metric do
       {:error, "system command fail"}
   end
 
-  def fetch_disk_usage do
+  @doc """
+  Fetch the disk metric.
+  """
+  def fetch_disk_metric() do
     {output, 0} = System.cmd("df", ["-l", "-k", "-P", "-T", "-x", "tmpfs", "-x", "devtmpfs"])
 
     percent_to_number = fn percent ->
@@ -74,7 +80,10 @@ defmodule Metric do
       {:error, "system command fail"}
   end
 
-  def fetch_network_usage do
+  @doc """
+  Fetch the network metric for each network interface.
+  """
+  def fetch_network_metric() do
     import String
     {:ok, interfaces} = File.ls("/sys/class/net/")
 
@@ -89,9 +98,9 @@ defmodule Metric do
   end
 
   @doc """
-  fetch the system load averages for the past 1, 5, and 15 minutes.
+  Fetch the system load averages for the past 1, 5, and 15 minutes.
   """
-  def fetch_loadavg do
+  def fetch_loadavg() do
     {output, 0} = System.cmd("cat", ["/proc/loadavg"])
     [load1, load5, load15 | _] = output |> String.trim() |> String.split()
     load = [load1, load5, load15] |> Enum.map(&String.to_float/1)
@@ -103,9 +112,9 @@ defmodule Metric do
   end
 
   @doc """
-  fetch list of user who currently logged in
+  Fetch list of user who currently logged in.
   """
-  def fetch_userlist do
+  def fetch_userlist() do
     {output, 0} = System.cmd("who", ["-q"])
 
     userlist =
@@ -121,9 +130,9 @@ defmodule Metric do
   end
 
   @doc """
-  fetch uptime in second (float)
+  Fetch uptime in second(float).
   """
-  def fetch_uptime do
+  def fetch_uptime() do
     {output, 0} = System.cmd("cat", ["/proc/uptime"])
     [total, _idle] = output |> String.trim() |> String.split()
 

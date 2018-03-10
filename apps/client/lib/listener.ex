@@ -53,7 +53,7 @@ defmodule Listener do
         try do
           handle_data(socket, data)
         rescue
-          e in RuntimeError -> Logger.error(e.message)
+          _ -> Logger.error("error when serving request")
         end
 
         serve_request(socket)
@@ -68,11 +68,12 @@ defmodule Listener do
 
     case command do
       "metric" ->
+        # add timestamp key
+        args = args ++ ["timestamp"]
         data = args |> Enum.map(&fetch_metric/1) |> Map.new() |> pack()
         :ssl.send(socket, data)
 
-      _ ->
-        :error
+      _ -> Logger.error("not supported command: " <> command)
     end
   end
 
@@ -86,6 +87,7 @@ defmodule Listener do
         "uptime" -> :uptime
         "loadavg" -> :loadavg
         "userlist" -> :userlist
+        "timestamp" -> :timestamp
       end
 
     {key, data} = :ets.lookup(:metric, key_atom) |> List.first()
