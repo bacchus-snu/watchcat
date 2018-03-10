@@ -47,7 +47,9 @@ defmodule Collector do
       # don't need to calculate
       {:uptime, Metric.fetch_uptime()},
       {:loadavg, Metric.fetch_loadavg()},
-      {:userlist, Metric.fetch_userlist()}
+      {:userlist, Metric.fetch_userlist()},
+      # get timestamp also
+      {:timestamp, timestamp()}
     ]
 
     # Update new metric information
