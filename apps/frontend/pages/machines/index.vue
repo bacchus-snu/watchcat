@@ -1,6 +1,8 @@
 <template>
   <div>
     <p>Machines page</p>
+    <input type='checkbox' id='auto-refresh' v-model='auto_refresh'>
+    <label for='auto-refresh'>자동 새로고침</label>
     <table id='machines-table'>
       <thead>
         <tr>
@@ -29,7 +31,8 @@ export default {
   data () {
     return {
       machine_list: [],
-      metric_map: {}
+      metric_map: {},
+      auto_refresh: false
     }
   },
   async asyncData ({ app }) {
@@ -48,6 +51,20 @@ export default {
         acc[metric.name] = metric;
         return acc
       }, {})
+    }
+  },
+  created () {
+    this.fetchMetric()
+    setInterval(function () {
+      if (this.auto_refresh){
+        this.fetchMetric();
+      }
+    }.bind(this), 3000);
+  },
+  methods: {
+    async fetchMetric () {
+      var metric_list = await this.$axios.$get('/api/metric')
+      this.metric_map = metric_list.reduce(function(acc, metric) {acc[metric.name] = metric; return acc}, {})
     }
   },
   components: {
