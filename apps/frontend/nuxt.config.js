@@ -18,6 +18,15 @@ module.exports = {
   */
   loading: { color: '#3B8070' },
 
+  css: [
+    'element-ui/lib/theme-chalk/reset.css',
+    'element-ui/lib/theme-chalk/index.css'
+  ],
+
+  plugins: [
+    '@/plugins/element-ui'
+  ],
+
   modules: [
      '@nuxtjs/axios',
   ],
