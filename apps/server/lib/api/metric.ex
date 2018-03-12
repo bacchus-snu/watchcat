@@ -1,9 +1,14 @@
 defmodule API.Metric do
   def init(req0 = %{method: "GET"}, state) do
+    permission = req0 |> API.get_permission()
     encode_metric = fn {name, metric_data} ->
       case metric_data do
         {:ok, metric} ->
-          %{"name" => name, "status" => "ok", "data" => metric}
+          if permission == "admin" do
+            %{"name" => name, "status" => "ok", "data" => metric}
+          else
+            %{"name" => name, "status" => "ok", "data" => metric |> Map.delete("userlist")}
+          end
 
         {:error, reason} ->
           %{"name" => name, "status" => "error", "reason" => reason}
@@ -12,14 +17,13 @@ defmodule API.Metric do
 
     machine_name = :cowboy_req.binding(:machine_name, req0)
 
-    {code, contents} =
+    {status_code, contents} =
       case machine_name do
         # /api/metric
         :undefined ->
           machine_metrics =
             :ets.match_object(:client_metrics, :_)
             |> Enum.map(encode_metric)
-
           {200, machine_metrics}
 
         # /api/metric/<machine_name>
@@ -34,7 +38,7 @@ defmodule API.Metric do
       end
 
     {type, contents} =
-      case code do
+      case status_code do
         200 ->
           {"application/json", contents |> Poison.encode!()}
 
@@ -44,7 +48,7 @@ defmodule API.Metric do
 
     req =
       :cowboy_req.reply(
-        code,
+        status_code,
         %{"content-type" => type},
         contents,
         req0
