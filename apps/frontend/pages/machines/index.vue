@@ -1,8 +1,6 @@
 <template>
   <div>
-    <p>Machines page</p>
-    <input type='checkbox' id='auto-refresh' v-model='auto_refresh'>
-    <label for='auto-refresh'>자동 새로고침</label>
+    <el-checkbox v-model="autoRefresh">3초마다 실시간으로 불러오기</el-checkbox>
     <el-table
       :data="tableData"
       style="width: 100%"
@@ -15,35 +13,47 @@
         :sortable="true"
         prop="name"
         label="Name"
+        min-width="100px"
       />
       <el-table-column
         prop="host"
         label="Host"
+        min-width="130px"
       />
       <el-table-column
         :sortable="true"
         prop="status"
         label="Status"
+        min-width="90px"
       />
       <el-table-column
         v-for="column in metricColumns"
-        :prop="column"
-        :label="capitalize(column)"
-        :key="column"
+        :prop="column.name"
+        :label="capitalize(column.name)"
+        :key="column.name"
+        :min-width="column.width"
       />
     </el-table>
   </div>
 </template>
 
 <script>
+function readableFileSize(size) {
+  var i = size == 0 ? 0 : Math.floor( Math.log(size) / Math.log(1024) );
+  return ( size / Math.pow(1024, i) ).toFixed(2) * 1 + ' ' + ['B', 'KB', 'MB', 'GB', 'TB'][i];
+};
+
 export default {
   data () {
     return {
       machine_list: [],
       metric_map: {},
-      auto_refresh: false,
+      autoRefresh: false,
       metricColumns: [
-        "cpu"
+        {name: "cpu", width: "100px"},
+        {name: "memory", width: "170px"},
+        {name: "disk", width: "180px"},
+        {name: "network", width: "170px"}
       ]
     }
   },
@@ -72,7 +82,7 @@ export default {
   created () {
     this.fetchMetric()
     setInterval(function () {
-      if (this.auto_refresh){
+      if (this.autoRefresh){
         this.fetchMetric();
       }
     }.bind(this), 3000);
@@ -85,7 +95,7 @@ export default {
 
     metricToRow (metric) {
       let row = this.metricColumns.reduce(function(map, column) {
-        map[column] = "-"
+        map[column.name] = "-"
         return map
       }, {})
 
@@ -95,8 +105,8 @@ export default {
         return row
       }
       let self = this
-      this.metricColumns.forEach(function(column) {
-        row[column] = self.metricToCell(column, metric.data)
+      this.metricColumns.forEach(function({name}) {
+        row[name] = self.metricToCell(name, metric.data)
       })
       return row
     },
@@ -110,6 +120,30 @@ export default {
 
       if (column == "cpu") {
         return data[0].usage.toFixed(2) + "%"
+      }
+      else if (column == "memory") {
+        let total = data.total
+        let nonCacheBuffer = (data.total - data.available)
+        return readableFileSize(nonCacheBuffer*1024) + " / " + readableFileSize(total*1024)
+      }
+      else if (column == "disk") {
+        let total = 0
+        let used = 0
+        data.forEach(function(disk) {
+          total += disk.total
+          used += disk.used
+        })
+        total = total
+        used = used
+        return readableFileSize(used*1024) + " / " + readableFileSize(total*1024)
+      }
+      else if (column == "network") {
+        let rx = 0, tx = 0
+        data.forEach(function(iface) {
+          rx += iface.rx_speed
+          tx += iface.tx_speed
+        })
+        return readableFileSize(rx * 1024) + "/s" + " - " + readableFileSize(tx * 1024) + "/s"
       }
     },
 
