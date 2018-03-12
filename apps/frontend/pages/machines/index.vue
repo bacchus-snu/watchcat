@@ -10,23 +10,36 @@
     >
       <el-table-column
         fixed
+        align="center"
+        header-align="center"
         :sortable="true"
         prop="name"
         label="Name"
-        min-width="100px"
-      />
+        min-width="100px">
+        <template slot-scope="scope">
+          <router-link :to="'/machines/' + scope.row.name">
+            {{ scope.row.name }}
+          </router-link>
+        </template>
+      </el-table-column>
       <el-table-column
+        align="center"
+        header-align="center"
         prop="host"
         label="Host"
         min-width="130px"
       />
       <el-table-column
+        align="center"
+        header-align="center"
         :sortable="true"
         prop="status"
         label="Status"
         min-width="90px"
       />
       <el-table-column
+        align="center"
+        header-align="center"
         v-for="column in metricColumns"
         :prop="column.name"
         :label="capitalize(column.name)"
