@@ -67,7 +67,8 @@ export default {
         {name: "memory", width: "170px"},
         {name: "disk", width: "180px"},
         {name: "network", width: "170px"}
-      ]
+      ],
+      timer: null
     }
   },
 
@@ -94,12 +95,17 @@ export default {
 
   created () {
     this.fetchMetric()
-    setInterval(function () {
+    this.timer = setInterval(function () {
       if (this.autoRefresh){
         this.fetchMetric();
       }
     }.bind(this), 3000);
   },
+
+  beforeDestroy () {
+    clearInterval(this.timer)
+  },
+
   methods: {
     async fetchMetric () {
       var metric_list = await this.$axios.$get('/api/metric')
