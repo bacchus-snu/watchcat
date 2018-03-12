@@ -99,6 +99,9 @@ defmodule Listener do
 
         {:error, reason} ->
           %{"status" => "error", "reason" => reason}
+
+        raw_data ->
+          raw_data
       end
 
     {key, result}
