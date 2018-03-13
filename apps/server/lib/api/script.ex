@@ -9,8 +9,8 @@ defmodule API.Script do
       {:ok, req, state}
     else
       {:ok, body, req1} = :cowboy_req.read_body(req0, %{length: 3 * 1024 * 1024})
-      %{name: name, script: script} = body |> Poison.decode!()
-      [{^name, %{name: ^name, host: host, fingerprint: fingerprint}}] =
+      %{"name" => name, "script" => script} = body |> Poison.decode!()
+      [{^name, %{"name" => ^name, "host" => host, "fingerprint" => fingerprint}}] =
         :dets.lookup(:clients, name)
 
       general_config = Application.get_env(:server, :general)
@@ -47,8 +47,10 @@ defmodule API.Script do
           {:ok, socket} ->
             :ssl.send(socket, command <> "\n")
             id = UUID.uuid4()
-            Task.Supervisor.start_child(API.Script.ResultCollector, fn -> handle_script(socket, id, name) end)
-            {:ok, id}
+          {:ok, pid} =
+            Task.Supervisor.start_child(TaskSupervisor, fn -> handle_script(socket, id, name) end)
+          :ok = :ssl.controlling_process(socket, pid)
+          {:ok, id}
 
           {:error, {:tls_alert, reason}} ->
             {:error, "tls_alert: " <> reason}
@@ -96,16 +98,16 @@ defmodule API.Script do
   end
 
   def handle_script(socket, id, name) do
-    :dets.insert(:script_results, {id, %{name: name, result: :not_available, timestamp: timestamp()}})
+    :dets.insert(:script_results, {id, %{name: name, data: :not_available, timestamp: timestamp()}})
     case :ssl.recv(socket, 0) do
       {:ok, data} ->
         :ssl.close(socket)
         [{^id, result_map}] = :dets.lookup(:script_results, id)
-        updated_map = result_map |> Map.put(:result, data |> unpack())
+        updated_map = result_map |> Map.put(:data, data |> unpack())
         :dets.insert(:script_results, {id, updated_map})
 
       {:error, reason} ->
-        Logger.error("script failed: #{name}-#{id}: " <> reason)
+        Logger.error("script failed: #{name}-#{id}: " <> to_string(reason))
     end
   end
 

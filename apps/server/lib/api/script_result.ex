@@ -19,7 +19,7 @@ defmodule API.ScriptResult do
             )
           {:ok, req, state}
 
-        [{^id, %{name: name, result: result, timestamp: timestamp}}] ->
+        [{^id, %{name: name, data: result, timestamp: timestamp}}] ->
           case result do
             :not_available ->
               req =
@@ -32,12 +32,12 @@ defmodule API.ScriptResult do
                 )
               {:ok, req, state}
 
-            script_result when is_binary(script_result) ->
+            script_result when is_map(script_result) ->
               req =
                 :cowboy_req.reply(
                   200,
                   %{"content-type" => "application/json"},
-                  %{name: name, status: "ok", result: script_result, timestamp: timestamp}
+                  %{name: name, status: "ok", data: script_result, timestamp: timestamp}
                   |> Poison.encode!(),
                   req0
                 )

@@ -29,7 +29,7 @@ defmodule ClientMetricCollector do
 
     clients
     |> Enum.each(fn client ->
-      Task.Supervisor.start_child(ClientMetricCollector.Crawler, fn -> crawl(client) end)
+      Task.Supervisor.start_child(TaskSupervisor, fn -> crawl(client) end)
     end)
   end
 
