@@ -37,7 +37,9 @@ defmodule Server do
          [
            {"/api/metric/[:machine_name]", API.Metric, []},
            {"/api/machines/[:machine_name]", API.Machine, []},
-           {"/api/machines/:machine_name/tags", API.Tag, []}
+           {"/api/machines/:machine_name/tags", API.Tag, []},
+           {"/api/script", API.Script, []},
+           {"/api/script/result/:id", API.ScriptResult, []}
          ]}
       ])
 

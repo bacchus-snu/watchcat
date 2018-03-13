@@ -10,7 +10,7 @@ defmodule API.Script do
     else
       {:ok, body, req1} = :cowboy_req.read_body(req0, %{length: 3 * 1024 * 1024})
       %{name: name, script: script} = body |> Poison.decode!()
-      {^name, %{name: ^name, host: host, fingerprint: fingerprint}} =
+      [{^name, %{name: ^name, host: host, fingerprint: fingerprint}}] =
         :dets.lookup(:clients, name)
 
       general_config = Application.get_env(:server, :general)
@@ -79,6 +79,7 @@ defmodule API.Script do
               req1
             )
           {:ok, req, state}
+      end
     end
   end
 
@@ -99,7 +100,7 @@ defmodule API.Script do
     case :ssl.recv(socket, 0) do
       {:ok, data} ->
         :ssl.close(socket)
-        {^id, result_map} = :dets.lookup(:script_results, id)
+        [{^id, result_map}] = :dets.lookup(:script_results, id)
         updated_map = result_map |> Map.put(:result, data |> unpack())
         :dets.insert(:script_results, {id, updated_map})
 
