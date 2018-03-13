@@ -1,22 +1,34 @@
 <template>
   <div>
-    <el-card id="basic-info-card" body-style="padding: 10px">
+    <el-card class="info-row-card" body-style="padding: 10px">
       <el-row :gutter="40">
         <el-col :span="8" class="info">
-          <i class="el-icon-info"/>
-          <span> Name - {{ machine.name }}</span>
-        </el-col>
-        <el-col :span="8" class="info">
-          <i class="el-icon-info"/>
-          <span> Host - {{ machine.host }}</span>
-        </el-col>
-        <el-col :span="8" class="info">
           <i :class='metric.status === "ok" ? "el-icon-success" : "el-icon-error"'/>
-          <span> Status - {{ metric.status }}</span>
+          <span>Status - {{ metric.status }}</span>
+        </el-col>
+        <el-col :span="8" class="info">
+          <i class="el-icon-info"/>
+          <span>Name - {{ machine.name }}</span>
+        </el-col>
+        <el-col :span="8" class="info">
+          <i class="el-icon-info"/>
+          <span>Host - {{ machine.host }}</span>
         </el-col>
       </el-row>
     </el-card>
     <template v-if="metric.status === 'ok'">
+      <el-card class="info-row-card" body-style="padding: 10px">
+        <el-row :gutter="40">
+          <el-col :span="8" class="info">
+            <i class="el-icon-time"/>
+            <span>{{ new Date(metric.data.timestamp*1000).toLocaleString() }}</span>
+          </el-col>
+          <el-col :span="8" class="info" v-if='metric.data.uptime.status === "ok"'>
+            <i class="el-icon-date"/>
+            <span>{{ uptime(metric.data.uptime.data) }}</span>
+          </el-col>
+        </el-row>
+      </el-card>
       <el-row :gutter="20">
         <el-col :span="6">
           <cpu-card :metric="metric.data.cpu"/>
@@ -62,6 +74,16 @@ export default {
     }
   },
 
+  methods: {
+    uptime (sec) {
+      let hours = Math.floor(sec / 60 / 60)
+      let days = Math.floor(hours / 24)
+      hours = hours % 24
+
+      return days + ' days ' + hours + ' hours up'
+    }
+  },
+
   components: {
     CpuCard,
     MemoryCard
@@ -70,6 +92,10 @@ export default {
 </script>
 
 <style>
+i {
+  margin-right: 5px;
+}
+
 .el-icon-success {
   color: green;
 }
@@ -79,7 +105,7 @@ export default {
   font-size: 16px;
 }
 
-#basic-info-card {
+.info-row-card {
   margin-bottom: 10px;
 }
 
@@ -96,5 +122,9 @@ export default {
 
 .el-progress {
   margin: 0px auto 10px auto;
+}
+
+.el-card {
+  box-shadow: 0 1px 1px 0 rgba(0, 0, 0, .1)
 }
 </style>
