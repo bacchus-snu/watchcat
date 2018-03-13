@@ -3,7 +3,7 @@
     <h2 slot="header">CPU</h2>
     <div class="card-body">
       <template v-if="cpu.ok">
-        <el-progress type="circle" :percentage="cpu.total.toFixed(2)" style="margin: auto"/>
+        <el-progress type="circle" :percentage="cpu.total.toFixed(2)"/>
         <ul class="progress-bars">
           <li v-for="core in cpu.cores" :key="core.name">
             <label>{{ core.name }}</label>
@@ -41,13 +41,6 @@ export default {
 </script>
 
 <style>
-div.card-body {
-  display: -webkit-flex;
-  display: flex;
-  -webkit-flex-direction: column;
-  flex-direction: column;
-}
-
 ul.progress-bars {
   padding: 0px 0px 0px 20px
 }
