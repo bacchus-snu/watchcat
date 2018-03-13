@@ -1,5 +1,6 @@
 <template>
   <div>
+    <el-checkbox v-model="autoRefresh">3초마다 실시간으로 불러오기</el-checkbox>
     <el-card class="info-row-card" body-style="padding: 10px">
       <el-row :gutter="40">
         <el-col :span="8" class="info">
@@ -52,7 +53,9 @@ export default {
   data () {
     return {
       machine: null,
-      metric: null
+      metric: null,
+      autoRefresh: false,
+      timer: null
     }
   },
 
@@ -74,7 +77,24 @@ export default {
     }
   },
 
+  created () {
+    this.timer = setInterval(function () {
+      if (this.autoRefresh) {
+        this.fetchMetric()
+      }
+    }.bind(this), 3000)
+  },
+
+  beforeDestroy () {
+    clearInterval(this.timer)
+  },
+
   methods: {
+    async fetchMetric () {
+      let metric = await this.$axios.$get('/api/metric/' + this.machine.name)
+      this.metric = metric
+    },
+
     uptime (sec) {
       let hours = Math.floor(sec / 60 / 60)
       let days = Math.floor(hours / 24)

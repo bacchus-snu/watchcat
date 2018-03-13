@@ -94,12 +94,11 @@ export default {
   },
 
   created () {
-    this.fetchMetric()
     this.timer = setInterval(function () {
-      if (this.autoRefresh){
-        this.fetchMetric();
+      if (this.autoRefresh) {
+        this.fetchMetric()
       }
-    }.bind(this), 3000);
+    }.bind(this), 3000)
   },
 
   beforeDestroy () {
