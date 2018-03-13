@@ -1,9 +1,21 @@
 <template>
   <div>
-    <el-col :span="24">
-      <div>Name: {{ machine.name }}</div>
-      <div>Host: {{ machine.host }}</div>
-    </el-col>
+    <el-card id="basic-info-card" body-style="padding: 10px">
+      <el-row :gutter="40">
+        <el-col :span="8" class="info">
+          <i class="el-icon-info"/>
+          <span> Name - {{ machine.name }}</span>
+        </el-col>
+        <el-col :span="8" class="info">
+          <i class="el-icon-info"/>
+          <span> Host - {{ machine.host }}</span>
+        </el-col>
+        <el-col :span="8" class="info">
+          <i :class='metric.status === "ok" ? "el-icon-success" : "el-icon-error"'/>
+          <span> Status - {{ metric.status }}</span>
+        </el-col>
+      </el-row>
+    </el-card>
     <template v-if="metric.status === 'ok'">
       <el-row :gutter="20">
         <el-col :span="6">
@@ -58,6 +70,19 @@ export default {
 </script>
 
 <style>
+.el-icon-success {
+  color: green;
+}
+
+.info {
+  text-align: center;
+  font-size: 16px;
+}
+
+#basic-info-card {
+  margin-bottom: 10px;
+}
+
 .card-body {
   display: -webkit-flex;
   display: flex;
