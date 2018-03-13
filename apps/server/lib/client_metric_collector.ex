@@ -54,6 +54,7 @@ defmodule ClientMetricCollector do
     opts = [
       :binary,
       active: false,
+      packet: :line,
       verify_fun:
         {&:ssl_verify_fingerprint.verify_fun/3, [{:check_fingerprint, {:sha256, fingerprint}}]},
       verify: :verify_peer,

@@ -13,13 +13,19 @@ defmodule Server do
 
   def stop(_state) do
     :dets.close(:clients)
+    :dets.close(:script_results)
+    :ssl.stop()
     :ok
   end
 
   defp init_database() do
-    db_filename = Application.get_env(:server, :general) |> Keyword.fetch!(:db_filename)
-    opts = [file: db_filename]
+    client_db_filename = Application.get_env(:server, :general) |> Keyword.fetch!(:client_db_filename)
+    opts = [file: client_db_filename]
     :dets.open_file(:clients, opts)
+
+    script_db_filename = Application.get_env(:server, :general) |> Keyword.fetch!(:script_db_filename)
+    opts = [file: script_db_filename]
+    :dets.open_file(:script_results, opts)
   end
 
   defp start_cowboy() do
