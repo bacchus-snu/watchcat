@@ -3,15 +3,15 @@
     <el-checkbox v-model="autoRefresh">3초마다 실시간으로 불러오기</el-checkbox>
     <el-card class="info-row-card" body-style="padding: 10px">
       <el-row :gutter="40">
-        <el-col :span="8" class="info">
+        <el-col :span="8" :xs="24" class="info">
           <i :class='metric.status === "ok" ? "el-icon-success" : "el-icon-error"'/>
           <span>Status - {{ metric.status }}</span>
         </el-col>
-        <el-col :span="8" class="info">
+        <el-col :span="8" :xs="24" class="info">
           <i class="el-icon-info"/>
           <span>Name - {{ machine.name }}</span>
         </el-col>
-        <el-col :span="8" class="info">
+        <el-col :span="8" :xs="24" class="info">
           <i class="el-icon-info"/>
           <span>Host - {{ machine.host }}</span>
         </el-col>
@@ -28,21 +28,21 @@
     <template v-if="metric.status === 'ok'">
       <el-card class="info-row-card" body-style="padding: 10px">
         <el-row :gutter="40">
-          <el-col :span="8" class="info">
+          <el-col :span="8" :xs="24" class="info">
             <i class="el-icon-time"/>
             <span>{{ new Date(metric.data.timestamp*1000).toLocaleString() }}</span>
           </el-col>
-          <el-col :span="8" class="info" v-if='metric.data.uptime.status === "ok"'>
+          <el-col :span="8" :xs="24" class="info" v-if='metric.data.uptime.status === "ok"'>
             <i class="el-icon-date"/>
             <span>{{ uptime(metric.data.uptime.data) }}</span>
           </el-col>
         </el-row>
       </el-card>
       <el-row :gutter="20">
-        <el-col :span="6">
+        <el-col :span="6" :xs="24">
           <cpu-card :metric="metric.data.cpu"/>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="6" :xs="24">
           <memory-card :metric="metric.data.memory"/>
         </el-col>
       </el-row>
@@ -164,6 +164,7 @@ i {
 }
 
 .el-card {
-  box-shadow: 0 1px 1px 0 rgba(0, 0, 0, .1)
+  box-shadow: 0 0px 0px 0 rgba(0, 0, 0, .1);
+  margin-bottom: 10px;
 }
 </style>
