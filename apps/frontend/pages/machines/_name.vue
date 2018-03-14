@@ -17,6 +17,14 @@
         </el-col>
       </el-row>
     </el-card>
+    <el-card class="info-row-card" body-style="padding: 5px 10px">
+      <div class="tag-header">Tags</div>
+      <el-tag
+        v-for="tag in machine.tags"
+        :key="tag">
+        {{ tag }}
+      </el-tag>
+    </el-card>
     <template v-if="metric.status === 'ok'">
       <el-card class="info-row-card" body-style="padding: 10px">
         <el-row :gutter="40">
@@ -112,6 +120,17 @@ export default {
 </script>
 
 <style>
+.tag-header {
+  display: inline-block;
+  border-right: 1px solid rgb(230,230,230);
+  padding-right: 10px;
+  margin: 0 5px;
+}
+
+.el-tag {
+  margin: 2px 5px;
+}
+
 i {
   margin-right: 5px;
 }
