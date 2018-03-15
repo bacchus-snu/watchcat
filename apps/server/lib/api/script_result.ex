@@ -1,5 +1,4 @@
 defmodule API.ScriptResult do
-
   def init(req0 = %{method: "GET"}, state) do
     permission = req0 |> API.get_permission()
 
@@ -8,6 +7,7 @@ defmodule API.ScriptResult do
       {:ok, req, state}
     else
       id = :cowboy_req.binding(:id, req0)
+
       case :dets.lookup(:script_results, id) do
         [] ->
           req =
@@ -17,6 +17,7 @@ defmodule API.ScriptResult do
               %{status: "not found"} |> Poison.encode!(),
               req0
             )
+
           {:ok, req, state}
 
         [{^id, %{name: name, data: result, timestamp: timestamp}}] ->
@@ -30,6 +31,7 @@ defmodule API.ScriptResult do
                   |> Poison.encode!(),
                   req0
                 )
+
               {:ok, req, state}
 
             script_result when is_map(script_result) ->
@@ -41,6 +43,7 @@ defmodule API.ScriptResult do
                   |> Poison.encode!(),
                   req0
                 )
+
               {:ok, req, state}
 
             _ ->
@@ -51,6 +54,7 @@ defmodule API.ScriptResult do
                   "",
                   req0
                 )
+
               {:ok, req, state}
           end
       end

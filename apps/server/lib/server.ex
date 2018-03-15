@@ -19,11 +19,15 @@ defmodule Server do
   end
 
   defp init_database() do
-    client_db_filename = Application.get_env(:server, :general) |> Keyword.fetch!(:client_db_filename)
+    client_db_filename =
+      Application.get_env(:server, :general) |> Keyword.fetch!(:client_db_filename)
+
     opts = [file: client_db_filename]
     :dets.open_file(:clients, opts)
 
-    script_db_filename = Application.get_env(:server, :general) |> Keyword.fetch!(:script_db_filename)
+    script_db_filename =
+      Application.get_env(:server, :general) |> Keyword.fetch!(:script_db_filename)
+
     opts = [file: script_db_filename]
     :dets.open_file(:script_results, opts)
   end

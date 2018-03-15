@@ -77,7 +77,8 @@ defmodule Listener do
         data = args |> List.first() |> invoke_command() |> pack()
         :ssl.send(socket, data <> "\n")
 
-      _ -> Logger.error("not supported command: " <> command)
+      _ ->
+        Logger.error("not supported command: " <> command)
     end
   end
 

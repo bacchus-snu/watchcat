@@ -11,19 +11,24 @@ defmodule API.Script do
       {:ok, body, req1} = :cowboy_req.read_body(req0, %{length: 3 * 1024 * 1024})
       %{"name" => name_body, "script" => script} = body |> Poison.decode!()
 
-      name_list = if is_list(name_body) do name_body else [name_body] end
+      name_list =
+        if is_list(name_body) do
+          name_body
+        else
+          [name_body]
+        end
+
       result_future_list =
         for name <- name_list do
           Task.async(fn -> {name, initate_script(name, script)} end)
         end
 
-      result_formatter =
-        fn res ->
-          case res do
-            {name, {:ok, id}} -> {name, %{success: true, id: id}}
-            {name, {:error, reason}} -> {name, %{success: false, reason: reason}}
-          end
+      result_formatter = fn res ->
+        case res do
+          {name, {:ok, id}} -> {name, %{success: true, id: id}}
+          {name, {:error, reason}} -> {name, %{success: false, reason: reason}}
         end
+      end
 
       result_list =
         for future <- result_future_list do
@@ -38,6 +43,7 @@ defmodule API.Script do
           result_list |> Poison.encode!(),
           req1
         )
+
       {:ok, req, state}
     end
   rescue
@@ -49,6 +55,7 @@ defmodule API.Script do
           "",
           req0
         )
+
       {:ok, req, state}
   end
 
@@ -97,14 +104,17 @@ defmodule API.Script do
     end
 
     command = ["command", script] |> pack()
+
     case :ssl.connect(host, port, opts, timeout) do
       {:ok, socket} ->
         :ssl.send(socket, command <> "\n")
         id = UUID.uuid4()
-      {:ok, pid} =
-        Task.Supervisor.start_child(TaskSupervisor, fn -> handle_script(socket, id, name) end)
-      :ok = :ssl.controlling_process(socket, pid)
-      {:ok, id}
+
+        {:ok, pid} =
+          Task.Supervisor.start_child(TaskSupervisor, fn -> handle_script(socket, id, name) end)
+
+        :ok = :ssl.controlling_process(socket, pid)
+        {:ok, id}
 
       {:error, {:tls_alert, reason}} ->
         {:error, "tls_alert: " <> reason}
@@ -115,7 +125,11 @@ defmodule API.Script do
   end
 
   def handle_script(socket, id, name) do
-    :dets.insert(:script_results, {id, %{name: name, data: :not_available, timestamp: timestamp()}})
+    :dets.insert(
+      :script_results,
+      {id, %{name: name, data: :not_available, timestamp: timestamp()}}
+    )
+
     case :ssl.recv(socket, 0) do
       {:ok, data} ->
         :ssl.close(socket)
