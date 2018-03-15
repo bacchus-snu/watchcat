@@ -15,6 +15,7 @@ defmodule API.Machine do
               {x, y} -> y
             end
           )
+
         contents =
           machines
           |> Enum.map(update)
@@ -26,6 +27,7 @@ defmodule API.Machine do
             contents =
               machine
               |> update.()
+
             {200, contents}
 
           [] ->

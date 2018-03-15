@@ -29,7 +29,7 @@ defmodule ClientMetricCollector do
 
     clients
     |> Enum.each(fn client ->
-      Task.Supervisor.start_child(ClientMetricCollector.Crawler, fn -> crawl(client) end)
+      Task.Supervisor.start_child(TaskSupervisor, fn -> crawl(client) end)
     end)
   end
 
@@ -54,6 +54,7 @@ defmodule ClientMetricCollector do
     opts = [
       :binary,
       active: false,
+      packet: :line,
       verify_fun:
         {&:ssl_verify_fingerprint.verify_fun/3, [{:check_fingerprint, {:sha256, fingerprint}}]},
       verify: :verify_peer,

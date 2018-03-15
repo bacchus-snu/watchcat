@@ -12,7 +12,7 @@ defmodule Server.MixProject do
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      aliases: aliases(),
+      aliases: aliases()
     ]
   end
 
@@ -30,6 +30,7 @@ defmodule Server.MixProject do
       {:poison, "~> 3.1"},
       {:ex2ms, "~> 1.0"},
       {:ssl_verify_fun, git: "https://github.com/deadtrickster/ssl_verify_fun.erl", tag: "1.1.3"},
+      {:uuid, "~> 1.1"},
       {:distillery, "~> 1.5", runtime: false}
     ]
   end

@@ -1,6 +1,7 @@
 defmodule API.Metric do
   def init(req0 = %{method: "GET"}, state) do
     permission = req0 |> API.get_permission()
+
     encode_metric = fn {name, metric_data} ->
       case metric_data do
         {:ok, metric} ->
@@ -24,6 +25,7 @@ defmodule API.Metric do
           machine_metrics =
             :ets.match_object(:client_metrics, :_)
             |> Enum.map(encode_metric)
+
           {200, machine_metrics}
 
         # /api/metric/<machine_name>

@@ -9,6 +9,6 @@ defmodule API do
     payload |> Map.get("perm", "normal")
   rescue
     _ ->
-    "normal"
+      "normal"
   end
 end
