@@ -9,79 +9,36 @@ defmodule API.Script do
       {:ok, req, state}
     else
       {:ok, body, req1} = :cowboy_req.read_body(req0, %{length: 3 * 1024 * 1024})
-      %{"name" => name, "script" => script} = body |> Poison.decode!()
-      [{^name, %{"name" => ^name, "host" => host, "fingerprint" => fingerprint}}] =
-        :dets.lookup(:clients, name)
+      %{"name" => name_body, "script" => script} = body |> Poison.decode!()
 
-      general_config = Application.get_env(:server, :general)
-      network_config = Application.get_env(:server, :network)
-      port = network_config |> Keyword.fetch!(:client_port)
-      timeout = network_config |> Keyword.fetch!(:timeout)
-      cert_path = general_config |> Keyword.fetch!(:cert_path)
-      key_path = general_config |> Keyword.fetch!(:key_path)
-      cacert_path = Application.app_dir(:server, "priv") |> Path.join("cacert.pem")
-
-      opts = [
-        :binary,
-        active: false,
-        packet: :line,
-        verify_fun:
-          {&:ssl_verify_fingerprint.verify_fun/3, [{:check_fingerprint, {:sha256, fingerprint}}]},
-        verify: :verify_peer,
-        certfile: cert_path,
-        keyfile: key_path,
-        cacertfile: cacert_path
-      ]
-
-      reason_to_string = fn reason ->
-        if is_binary(reason) do
-          reason
-        else
-          reason |> inspect
-        end
-      end
-
-      command = ["command", script] |> pack()
-      result =
-        case :ssl.connect(host, port, opts, timeout) do
-          {:ok, socket} ->
-            :ssl.send(socket, command <> "\n")
-            id = UUID.uuid4()
-          {:ok, pid} =
-            Task.Supervisor.start_child(TaskSupervisor, fn -> handle_script(socket, id, name) end)
-          :ok = :ssl.controlling_process(socket, pid)
-          {:ok, id}
-
-          {:error, {:tls_alert, reason}} ->
-            {:error, "tls_alert: " <> reason}
-
-          {:error, reason} ->
-            {:error, reason |> reason_to_string.()}
+      name_list = if is_list(name_body) do name_body else [name_body] end
+      result_future_list =
+        for name <- name_list do
+          Task.async(fn -> {name, initate_script(name, script)} end)
         end
 
-      case result do
-        {:ok, id} ->
-          ret = %{success: true, id: id}
-          req =
-            :cowboy_req.reply(
-              200,
-              %{"content-type" => "application/json"},
-              ret |> Poison.encode!(),
-              req1
-            )
-          {:ok, req, state}
+      result_formatter =
+        fn res ->
+          case res do
+            {name, {:ok, id}} -> {name, %{success: true, id: id}}
+            {name, {:error, reason}} -> {name, %{success: false, reason: reason}}
+          end
+        end
 
-        {:error, reason} ->
-          ret = %{success: false, reason: reason}
-          req =
-            :cowboy_req.reply(
-              400,
-              %{"content-type" => "application/json"},
-              ret |> Poison.encode!(),
-              req1
-            )
-          {:ok, req, state}
-      end
+      result_list =
+        for future <- result_future_list do
+          Task.await(future) |> result_formatter.()
+        end
+        |> Map.new()
+
+      req =
+        :cowboy_req.reply(
+          200,
+          %{"content-type" => "application/json"},
+          result_list |> Poison.encode!(),
+          req1
+        )
+      {:ok, req, state}
     end
   end
 
@@ -95,6 +52,56 @@ defmodule API.Script do
       )
 
     {:ok, req, state}
+  end
+
+  def initate_script(name, script) do
+    [{^name, %{"name" => ^name, "host" => host, "fingerprint" => fingerprint}}] =
+      :dets.lookup(:clients, name)
+
+    general_config = Application.get_env(:server, :general)
+    network_config = Application.get_env(:server, :network)
+    port = network_config |> Keyword.fetch!(:client_port)
+    timeout = network_config |> Keyword.fetch!(:timeout)
+    cert_path = general_config |> Keyword.fetch!(:cert_path)
+    key_path = general_config |> Keyword.fetch!(:key_path)
+    cacert_path = Application.app_dir(:server, "priv") |> Path.join("cacert.pem")
+
+    opts = [
+      :binary,
+      active: false,
+      packet: :line,
+      verify_fun:
+        {&:ssl_verify_fingerprint.verify_fun/3, [{:check_fingerprint, {:sha256, fingerprint}}]},
+      verify: :verify_peer,
+      certfile: cert_path,
+      keyfile: key_path,
+      cacertfile: cacert_path
+    ]
+
+    reason_to_string = fn reason ->
+      if is_binary(reason) do
+        reason
+      else
+        reason |> inspect
+      end
+    end
+
+    command = ["command", script] |> pack()
+    case :ssl.connect(host, port, opts, timeout) do
+      {:ok, socket} ->
+        :ssl.send(socket, command <> "\n")
+        id = UUID.uuid4()
+      {:ok, pid} =
+        Task.Supervisor.start_child(TaskSupervisor, fn -> handle_script(socket, id, name) end)
+      :ok = :ssl.controlling_process(socket, pid)
+      {:ok, id}
+
+      {:error, {:tls_alert, reason}} ->
+        {:error, "tls_alert: " <> reason}
+
+      {:error, reason} ->
+        {:error, reason |> reason_to_string.()}
+    end
   end
 
   def handle_script(socket, id, name) do
