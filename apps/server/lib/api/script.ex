@@ -40,6 +40,16 @@ defmodule API.Script do
         )
       {:ok, req, state}
     end
+  rescue
+    _ ->
+      req =
+        :cowboy_req.reply(
+          400,
+          %{"content-type" => "text/plain"},
+          "",
+          req0
+        )
+      {:ok, req, state}
   end
 
   def init(req0, state) do
