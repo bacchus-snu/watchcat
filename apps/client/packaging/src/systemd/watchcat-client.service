@@ -4,8 +4,9 @@ After=network.target
 
 [Service]
 Type=simple
-Environment="HOME=/tmp"
+Environment="HOME=/opt/watchcat-client"
 ExecStart=/opt/watchcat-client/bin/client foreground
+ExecStop=/opt/watchcat-client/bin/client stop
 Restart=always
 
 [Install]
