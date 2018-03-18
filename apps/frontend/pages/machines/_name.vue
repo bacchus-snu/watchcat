@@ -18,7 +18,9 @@
       </el-row>
     </el-card>
     <el-card class="info-row-card" body-style="padding: 5px 10px">
-      <div class="tag-header">Tags</div>
+      <div class="tag-header">
+        <p>Tags</p>
+      </div>
       <el-tag
         v-for="tag in machine.tags"
         :key="tag">
@@ -125,6 +127,7 @@ export default {
   border-right: 1px solid rgb(230,230,230);
   padding-right: 10px;
   margin: 0 5px;
+  height: 30px;
 }
 
 .el-tag {
@@ -137,6 +140,10 @@ i {
 
 .el-icon-success {
   color: green;
+}
+
+.el-icon-error {
+  color: red;
 }
 
 .info {
