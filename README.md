@@ -23,7 +23,7 @@ git clone https://github.com/bacchus-snu/watchcat.git
 cd watchcat/apps/server
 vim config/config.exs
 
-mix start --no-halt
+mix run --no-halt
 ```
 
 ### watchcat.bacchus.snucse.org에 deploy
@@ -51,6 +51,6 @@ sudo apt install watchcat-client
 
 ### Server side
 * 최초 실행 시에 randomly generated secret key를 생성
-* 이 secret key에 기반한 token으로 REST API의 authentication을 수행
+* 이 secret key에 기반한 token으로 REST API의 authentication을 수행 (JSON Web Token)
 * 최초 Machine 추가 시에 Client certificate의 fingerprint를 저장
 * 클라이언트의 연결을 fingerprint로 validation
