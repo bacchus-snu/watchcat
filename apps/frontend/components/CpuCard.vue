@@ -7,7 +7,7 @@
         <ul class="progress-bars">
           <li v-for="core in cpu.cores" :key="core.name">
             <label>{{ core.name }}</label>
-            <el-progress :percentage="core.usage.toFixed(2)"/>
+            <el-progress stroke-width=14 text-inside=true :percentage="core.usage.toFixed(2)"/>
           </li>
         </ul>
       </template>
