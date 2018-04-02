@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-checkbox v-model="autoRefresh">3초마다 실시간으로 불러오기</el-checkbox>
+    <el-checkbox v-model="$store.state.autoRefresh">3초마다 실시간으로 불러오기</el-checkbox>
     <el-table
       :data="tableData"
       style="width: 100%"
@@ -61,7 +61,6 @@ export default {
     return {
       machine_list: [],
       metric_map: {},
-      autoRefresh: false,
       metricColumns: [
         {name: "cpu", width: "100px"},
         {name: "memory", width: "170px"},
@@ -95,7 +94,7 @@ export default {
 
   created () {
     this.timer = setInterval(function () {
-      if (this.autoRefresh) {
+      if (this.$store.state.autoRefresh) {
         this.fetchMetric()
       }
     }.bind(this), 3000)

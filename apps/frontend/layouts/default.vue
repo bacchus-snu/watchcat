@@ -27,11 +27,11 @@
 export default {
   data () {
     return {
-      windowWidth: 0
+      windowWidth: 1920
     }
   },
 
-  mounted () {
+  beforeMount () {
     this.windowWidth = window.innerWidth
     window.addEventListener('resize', this.updateWidth)
   },
@@ -62,9 +62,12 @@ export default {
   margin-right: auto;
 }
 
+.header-container h1 {
+  margin-right: 40px;
+}
+
 .nav-container {
   display: flex;
-  margin-left: 50px;
 }
 
 .nav-item {
