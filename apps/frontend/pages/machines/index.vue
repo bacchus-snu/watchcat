@@ -44,7 +44,9 @@
         :prop="column.name"
         :label="capitalize(column.name)"
         :key="column.name"
-        :min-width="column.width">
+        :min-width="column.width"
+        :sortable="column.isGroup ? false : true"
+        :sort-method="(a,b) => sortColumn(a,b,column.name)">
         <el-table-column
           v-if="column.isGroup"
           align="center"
@@ -53,7 +55,9 @@
           :prop="column.name + ' ' + subcolumn.name"
           :label="capitalize(subcolumn.name)"
           :key="column.name + ' ' + subcolumn.name"
-          :min-width="subcolumn.width">
+          :min-width="subcolumn.width"
+          :sortable="true"
+          :sort-method="(a,b) => sortColumn(a,b,column.name + ' ' + subcolumn.name)">
           <template slot-scope="scope">
             <div class="cell-brief">{{ scope.row[column.name + ' ' + subcolumn.name].brief }}</div>
             <div class="cell-detail" v-if="scope.row[column.name + ' ' + subcolumn.name].detail">
@@ -141,10 +145,10 @@ export default {
       let row = this.metricColumns.reduce(function(map, column) {
         if (column.isGroup) {
           column.subcolumns.forEach(function(subcolumn) {
-            map[column.name + ' ' + subcolumn.name] = {brief: "-"}
+            map[column.name + ' ' + subcolumn.name] = {value: -1, brief: "-"}
           })
         } else {
-          map[column.name] = {brief: "-"}
+          map[column.name] = {value: -1, brief: "-"}
         }
         return map
       }, {})
@@ -171,38 +175,55 @@ export default {
     metricToCell (column, metric) {
       let columnGroup = column.split(" ")[0]
       if (metric[columnGroup].status === "error") {
-        return {brief: "-"}
+        return {value: -1, brief: "-"}
       }
 
       let data = metric[columnGroup].data
 
       if (column === "cpu") {
+        let percent = Cpu.totalUsagePercent(data)
         return {
-          brief: data[0].usage.toFixed(2) + "%"
+          value: percent,
+          brief: percent.toFixed(2) + " %"
         }
       }
       else if (column === "memory") {
+        let percent = Memory.usagePercent(data)
         return {
-          brief: Memory.usagePercent(data).toFixed(2) + " %",
+          value: percent,
+          brief: percent.toFixed(2) + " %",
           detail: Memory.nonCacheBufferText(data) + " / " + Memory.totalText(data)
         }
       }
       else if (column === "disk") {
+        let percent = Disk.totalUsagePercent(data)
         return {
-          brief: Disk.totalUsagePercent(data).toFixed(2) + " %",
+          value: percent,
+          brief: percent.toFixed(2) + " %",
           detail: Disk.totalUsageText(data) + " / " + Disk.totalSizeText(data)
         }
       }
       else if (column === "network read") {
+        let speed = Network.read(data)
         return {
-          brief: Network.readText(data)
+          value: speed,
+          brief: Network.speedText(speed)
         }
       }
       else if (column === "network write") {
+        let speed = Network.write(data)
         return {
-          brief: Network.writeText(data)
+          value: speed,
+          brief: Network.speedText(speed)
         }
       }
+    },
+
+    sortColumn(a, b, column) {
+      let aVal = a[column].value
+      let bVal = b[column].value
+
+      return aVal === bVal ? 0 : aVal < bVal ? 1 : -1
     },
 
     capitalize (s) {

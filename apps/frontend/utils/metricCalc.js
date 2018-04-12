@@ -9,7 +9,7 @@ function percentage (total, usage) {
 
 export const Cpu = {
   totalUsagePercent (data) {
-    return data[0].usage.toFixed(2) + ' %'
+    return data[0].usage
   }
 }
 
@@ -82,15 +82,11 @@ export const Network = {
     return data.reduce((acc, iface) => acc + iface.rx_speed, 0) * 1024
   },
 
-  readText (data) {
-    return fileSize(this.read(data)) + "/s"
-  },
-
   write (data) {
     return data.reduce((acc, iface) => acc + iface.tx_speed, 0) * 1024
   },
 
-  writeText (data) {
-    return fileSize(this.write(data)) + "/s"
+  speedText(speed) {
+    return fileSize(speed) + "/s"
   }
 }
