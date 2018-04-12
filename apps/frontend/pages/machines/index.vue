@@ -4,7 +4,7 @@
     <el-table
       :data="tableData"
       style="width: 100%"
-      :cell-style="{height: '10px', padding: '5px'}"
+      :cell-style="{height: '42px', padding: '3px'}"
       :default-sort="{prop: 'name'}"
       row-key="name"
     >
@@ -36,7 +36,7 @@
         prop="status"
         label="Status"
         min-width="90px"
-      />
+        />
       <el-table-column
         align="center"
         header-align="center"
@@ -44,19 +44,37 @@
         :prop="column.name"
         :label="capitalize(column.name)"
         :key="column.name"
-        :min-width="column.width"
-      />
+        :min-width="column.width">
+        <el-table-column
+          v-if="column.isGroup"
+          align="center"
+          header-align="center"
+          v-for="subcolumn in column.subcolumns"
+          :prop="column.name + ' ' + subcolumn.name"
+          :label="capitalize(subcolumn.name)"
+          :key="column.name + ' ' + subcolumn.name"
+          :min-width="subcolumn.width">
+          <template slot-scope="scope">
+            <div class="cell-brief">{{ scope.row[column.name + ' ' + subcolumn.name].brief }}</div>
+            <div class="cell-detail" v-if="scope.row[column.name + ' ' + subcolumn.name].detail">
+              {{ scope.row[column.name + ' ' + subcolumn.name].detail }}
+            </div>
+          </template>
+        </el-table-column>
+        <template slot-scope="scope" v-if="!column.isGroup">
+          <div class="cell-brief">{{ scope.row[column.name].brief }}</div>
+          <div v-if="scope.row[column.name].detail" class="cell-detail">
+            {{ scope.row[column.name].detail }}
+          </div>
+        </template>
+      </el-table-column>
     </el-table>
   </div>
 </template>
 
 <script>
 import AutoRefreshCheckbox from '~/components/AutoRefreshCheckbox.vue'
-
-function readableFileSize(size) {
-  var i = size == 0 ? 0 : Math.floor( Math.log(size) / Math.log(1024) );
-  return ( size / Math.pow(1024, i) ).toFixed(2) * 1 + ' ' + ['B', 'KB', 'MB', 'GB', 'TB'][i];
-};
+import {Cpu, Memory, Disk, Network} from '~/utils/metricCalc.js'
 
 export default {
   data () {
@@ -65,9 +83,16 @@ export default {
       metric_map: {},
       metricColumns: [
         {name: "cpu", width: "100px"},
-        {name: "memory", width: "170px"},
-        {name: "disk", width: "180px"},
-        {name: "network", width: "170px"}
+        {name: "memory", width: "160px"},
+        {name: "disk", width: "160px"},
+        {
+          name: "network",
+          isGroup: true,
+          subcolumns: [
+            {name: "read", width: "110px"},
+            {name: "write", width: "110px"}
+          ]
+        }
       ],
       timer: null
     }
@@ -114,55 +139,69 @@ export default {
 
     metricToRow (metric) {
       let row = this.metricColumns.reduce(function(map, column) {
-        map[column.name] = "-"
+        if (column.isGroup) {
+          column.subcolumns.forEach(function(subcolumn) {
+            map[column.name + ' ' + subcolumn.name] = {brief: "-"}
+          })
+        } else {
+          map[column.name] = {brief: "-"}
+        }
         return map
       }, {})
 
-      row.status = metric.status == "ok" ? "O" : "X"
+      row.status = metric.status === "ok" ? "O" : "X"
 
-      if (metric.status == "error") {
+      if (metric.status === "error") {
         return row
       }
       let self = this
-      this.metricColumns.forEach(function({name}) {
-        row[name] = self.metricToCell(name, metric.data)
+      this.metricColumns.forEach(function(column) {
+        if (column.isGroup) {
+          column.subcolumns.forEach(function(subcolumn) {
+            let name = column.name + ' ' + subcolumn.name
+            row[name] = self.metricToCell(name, metric.data)
+          })
+        } else {
+          row[column.name] = self.metricToCell(column.name, metric.data)
+        }
       })
       return row
     },
 
     metricToCell (column, metric) {
-      if (metric[column].status == "error") {
-        return "-"
+      let columnGroup = column.split(" ")[0]
+      if (metric[columnGroup].status === "error") {
+        return {brief: "-"}
       }
 
-      let data = metric[column].data
+      let data = metric[columnGroup].data
 
-      if (column == "cpu") {
-        return data[0].usage.toFixed(2) + "%"
+      if (column === "cpu") {
+        return {
+          brief: data[0].usage.toFixed(2) + "%"
+        }
       }
-      else if (column == "memory") {
-        let total = data.total
-        let nonCacheBuffer = (data.total - data.available)
-        return readableFileSize(nonCacheBuffer*1024) + " / " + readableFileSize(total*1024)
+      else if (column === "memory") {
+        return {
+          brief: Memory.usagePercent(data).toFixed(2) + " %",
+          detail: Memory.nonCacheBufferText(data) + " / " + Memory.totalText(data)
+        }
       }
-      else if (column == "disk") {
-        let total = 0
-        let used = 0
-        data.forEach(function(disk) {
-          total += disk.total
-          used += disk.used
-        })
-        total = total
-        used = used
-        return readableFileSize(used*1024) + " / " + readableFileSize(total*1024)
+      else if (column === "disk") {
+        return {
+          brief: Disk.totalUsagePercent(data).toFixed(2) + " %",
+          detail: Disk.totalUsageText(data) + " / " + Disk.totalSizeText(data)
+        }
       }
-      else if (column == "network") {
-        let rx = 0, tx = 0
-        data.forEach(function(iface) {
-          rx += iface.rx_speed
-          tx += iface.tx_speed
-        })
-        return readableFileSize(rx * 1024) + "/s" + " - " + readableFileSize(tx * 1024) + "/s"
+      else if (column === "network read") {
+        return {
+          brief: Network.readText(data)
+        }
+      }
+      else if (column === "network write") {
+        return {
+          brief: Network.writeText(data)
+        }
       }
     },
 
@@ -176,3 +215,15 @@ export default {
   }
 }
 </script>
+
+<style>
+.cell-brief {
+  line-height: 20px;
+}
+
+.cell-detail {
+  font-size: 12px;
+  color: rgb(150,150,150);
+  line-height: 15px;
+}
+</style>
