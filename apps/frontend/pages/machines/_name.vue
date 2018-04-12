@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-checkbox v-model="autoRefresh">3초마다 실시간으로 불러오기</el-checkbox>
+    <auto-refresh-checkbox/>
     <el-card class="info-row-card" body-style="padding: 10px">
       <el-row :gutter="40">
         <el-col :span="8" :xs="24" class="info">
@@ -56,6 +56,7 @@
 </template>
 
 <script>
+import AutoRefreshCheckbox from '~/components/AutoRefreshCheckbox.vue'
 import CpuCard from '~/components/CpuCard.vue'
 import MemoryCard from '~/components/MemoryCard.vue'
 
@@ -64,7 +65,6 @@ export default {
     return {
       machine: null,
       metric: null,
-      autoRefresh: false,
       timer: null
     }
   },
@@ -89,7 +89,7 @@ export default {
 
   created () {
     this.timer = setInterval(function () {
-      if (this.autoRefresh) {
+      if (this.$store.state.autoRefresh) {
         this.fetchMetric()
       }
     }.bind(this), 3000)
@@ -115,6 +115,7 @@ export default {
   },
 
   components: {
+    AutoRefreshCheckbox,
     CpuCard,
     MemoryCard
   }
