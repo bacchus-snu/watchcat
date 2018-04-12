@@ -5,7 +5,6 @@
       :data="tableData"
       style="width: 100%"
       :cell-style="{height: '42px', padding: '3px'}"
-      :default-sort="{prop: 'name'}"
       row-key="name"
     >
       <el-table-column
@@ -114,6 +113,7 @@ export default {
       app.$axios.$get('/api/machines'),
       app.$axios.$get('/api/metric')
     ])
+    machine_list.sort((a,b) => a.name === b.name ? 0 : a.name > b.name ? 1 : -1)
     return {
       machine_list,
       metric_map: metric_list.reduce(function(acc, metric) {
@@ -223,7 +223,7 @@ export default {
       let aVal = a[column].value
       let bVal = b[column].value
 
-      return aVal === bVal ? 0 : aVal < bVal ? 1 : -1
+      return aVal === bVal ? 0 : aVal > bVal ? 1 : -1
     },
 
     capitalize (s) {
