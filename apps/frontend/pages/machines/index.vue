@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-checkbox v-model="$store.state.autoRefresh">3초마다 실시간으로 불러오기</el-checkbox>
+    <auto-refresh-checkbox/>
     <el-table
       :data="tableData"
       style="width: 100%"
@@ -51,6 +51,8 @@
 </template>
 
 <script>
+import AutoRefreshCheckbox from '~/components/AutoRefreshCheckbox.vue'
+
 function readableFileSize(size) {
   var i = size == 0 ? 0 : Math.floor( Math.log(size) / Math.log(1024) );
   return ( size / Math.pow(1024, i) ).toFixed(2) * 1 + ' ' + ['B', 'KB', 'MB', 'GB', 'TB'][i];
@@ -167,6 +169,10 @@ export default {
     capitalize (s) {
       return s[0].toUpperCase() + s.slice(1)
     }
+  },
+
+  components: {
+    AutoRefreshCheckbox
   }
 }
 </script>
