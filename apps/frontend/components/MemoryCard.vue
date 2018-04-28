@@ -3,11 +3,11 @@
     <h2 slot="header">Memory</h2>
     <div class="card-body">
       <template v-if="memory.ok">
-        <el-progress type="circle" :percentage="memory.usage.toFixed(2)"/>
+        <el-progress type="circle" :percentage="Number(memory.usage.toFixed(2))"/>
         <span>{{ memory.used.toFixed(2) }}GB / {{ memory.total.toFixed(2) }}GB</span>
         <div class="line"/>
         <h3>Swap</h3>
-        <el-progress type="circle" :percentage="memory.swapUsage.toFixed(2)"/>
+        <el-progress type="circle" :percentage="Number(memory.swapUsage.toFixed(2))"/>
         <span>{{ memory.swapUsed.toFixed(2) }}GB / {{ memory.swapTotal.toFixed(2) }}GB</span>
         <div class="line"/>
       </template>

@@ -15,7 +15,7 @@ export const Cpu = {
 
 export const Memory = {
   total (data) {
-    return data.total*1024
+    return data.total * 1024
   },
 
   totalText (data) {
