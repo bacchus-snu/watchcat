@@ -3,11 +3,11 @@
     <h2 slot="header">CPU</h2>
     <div class="card-body">
       <template v-if="cpu.ok">
-        <el-progress type="circle" :percentage="cpu.total.toFixed(2)"/>
+        <el-progress type="circle" :percentage="Number(cpu.total.toFixed(2))"/>
         <ul class="progress-bars">
           <li v-for="core in cpu.cores" :key="core.name">
             <label>{{ core.name }}</label>
-            <el-progress :percentage="core.usage.toFixed(2)"/>
+            <el-progress :stroke-width=14 :text-inside=true :percentage="Number(core.usage.toFixed(2))"/>
           </li>
         </ul>
       </template>
