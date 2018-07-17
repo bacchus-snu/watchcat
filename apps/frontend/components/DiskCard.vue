@@ -6,7 +6,7 @@
         <ul class="progress-bars">
           <li class="partition" v-for="partition in disk.partitions" :key="partition.filesystem">
             <label>{{ partition.filesystem }}</label>
-            <el-progress :stroke-width=14 :text-inside=true :percentage="Number(partition.used_percent.toFixed(2))"/>
+            <el-progress :color="getColor(partition)" :stroke-width=14 :text-inside="true" :percentage="normalizeDiskUsage(partition)"/>
             <span class="file-size">{{ partition.totalUsageText }} / {{ partition.totalSizeText }}</span>
           </li>
         </ul>
@@ -39,12 +39,29 @@ export default {
             'totalUsageText': fileSize(part.used * 1024)
           }))
           .sort((a, b) => a.filesystem > b.filesystem)
-        console.log(ret.partitions)
       } else {
         ret.reason = diskInfo.reason
       }
 
       return ret
+    }
+  },
+
+  methods: {
+    normalizeDiskUsage(partition) {
+      return Number(partition.used_percent.toFixed(2))
+    },
+
+    getColor(partition) {
+      let diskUsage = this.normalizeDiskUsage(partition)
+
+      if (diskUsage > 80) {
+        return '#F56C6C' // red
+      } else if (diskUsage > 50) {
+        return '#E6A23C' // yellow
+      } else {
+        return '#409EFF'
+      }
     }
   }
 }

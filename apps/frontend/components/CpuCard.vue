@@ -7,7 +7,7 @@
         <ul class="progress-bars">
           <li v-for="core in cpu.cores" :key="core.name">
             <label>{{ core.name }}</label>
-            <el-progress :stroke-width=14 :text-inside=true :percentage="Number(core.usage.toFixed(2))"/>
+            <el-progress :color="getColor(core)" :stroke-width=14 :text-inside=true :percentage="normalizeCpuUsage(core)"/>
           </li>
         </ul>
       </template>
@@ -35,6 +35,24 @@ export default {
       }
 
       return ret
+    }
+  },
+
+  methods: {
+    normalizeCpuUsage(core) {
+      return Number(core.usage.toFixed(2))
+    },
+
+    getColor(core) {
+      let cpuUsage = this.normalizeCpuUsage(core)
+
+      if (cpuUsage > 80) {
+        return '#F56C6C' // red
+      } else if (cpuUsage > 50) {
+        return '#E6A23C' // yellow
+      } else {
+        return '#409EFF'
+      }
     }
   }
 }
