@@ -16,10 +16,8 @@
     "@nuxtjs/axios": "^5.3.1",
     "ajv": "^6.5.2",
     "axios": "^0.18.0",
-    "chart.js": "^2.7.2",
     "element-ui": "^2.4.4",
-    "nuxt": "^1.4.1",
-    "vue-chartjs": "^3.3.2"
+    "nuxt": "^1.4.1"
   },
   "devDependencies": {
     "babel-eslint": "^8.2.6",

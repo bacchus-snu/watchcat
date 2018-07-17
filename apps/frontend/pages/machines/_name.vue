@@ -50,6 +50,9 @@
         <el-col :span="6" :xs="24">
           <disk-card :metric="metric.data.disk"/>
         </el-col>
+        <el-col :span="6" :xs="24">
+          <network-card :metric="metric.data.network"/>
+        </el-col>
       </el-row>
     </template>
     <template v-else>
@@ -63,6 +66,7 @@ import AutoRefreshCheckbox from '~/components/AutoRefreshCheckbox.vue'
 import CpuCard from '~/components/CpuCard.vue'
 import MemoryCard from '~/components/MemoryCard.vue'
 import DiskCard from '~/components/DiskCard.vue'
+import NetworkCard from '~/components/NetworkCard.vue'
 
 export default {
   data () {
@@ -122,7 +126,8 @@ export default {
     AutoRefreshCheckbox,
     CpuCard,
     MemoryCard,
-    DiskCard
+    DiskCard,
+    NetworkCard
   }
 }
 </script>
